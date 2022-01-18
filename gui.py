@@ -5,7 +5,6 @@ GUI setup and drawing functions
 
 import tkinter
 import time
-
 import geometry
 
 
@@ -22,6 +21,8 @@ class MainGUI(tkinter.Tk):
 
         self.center_x = self.height // 2
         self.center_y = self.width // 2
+
+        self.trace = None
 
         self.outer_circle = None
         self.outer_circle_radius = 200
@@ -90,18 +91,18 @@ class MainGUI(tkinter.Tk):
         """Test animation - pendulum rotating 360° inside the inner circle"""
         self.update()
         pendulum_coords_list = []
-        for i in range(1, 361):
+        for i in range(1, 3601):
             if self.playback_stopped:
                 self.playback_stopped = False
                 return
             time.sleep(1 / 120)
             self.main_canvas.delete(self.pendulum)
             self.main_canvas.delete(self.inner_circle)
-            self.main_canvas.delete(all)
+            self.main_canvas.delete(self.trace)
 
             self.inner_circle_x, self.inner_circle_y = geometry.polar_to_cartesian_with_offset(
                 r=self.inner_circle_radius,
-                theta=i,
+                theta=i*3,
                 x_offset=self.center_x,
                 y_offset=self.center_y
             )
@@ -114,7 +115,7 @@ class MainGUI(tkinter.Tk):
 
             self.pendulum_end_x, self.pendulum_end_y = geometry.polar_to_cartesian_with_offset(
                     r=self.inner_circle_radius,
-                    theta=i*2,
+                    theta=i*0.2,
                     x_offset=self.inner_circle_x,
                     y_offset=self.inner_circle_y
                 )
@@ -133,7 +134,7 @@ class MainGUI(tkinter.Tk):
             self.main_canvas.tag_lower(self.outer_circle)
 
             if i > 2:
-                self.main_canvas.create_line(
+                self.trace = self.main_canvas.create_line(
                     pendulum_coords_list,
                     width=1,
                     smooth=1,
