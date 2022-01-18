@@ -35,6 +35,8 @@ class MainGUI(tkinter.Tk):
         self.pendulum_end_x = 0
         self.pendulum_end_y = 0
 
+        self.playback_stopped = False
+
         self.main_canvas = tkinter.Canvas(
             height=800,
             width=800,
@@ -48,6 +50,12 @@ class MainGUI(tkinter.Tk):
         )
         self.play_button.pack()
 
+        self.stop_button = tkinter.Button(
+            text='STOP',
+            command=self.stop_playback
+        )
+        self.stop_button.pack()
+
         self.draw_initial_setup()
 
     def circle(self, x=0.0, y=0.0, r=0.0):
@@ -57,72 +65,81 @@ class MainGUI(tkinter.Tk):
     def draw_initial_setup(self):
         """Draw all components on canvas at default settings"""
         self.outer_circle = self.circle(
-            x=self.height // 2,
-            y=self.width // 2,
+            x=self.center_x,
+            y=self.center_y,
             r=200,
         )
 
         self.inner_circle = self.circle(
-            x=self.height // 2,
-            y=self.width // 2,
+            x=self.center_x,
+            y=self.center_y,
             r=100,
         )
 
         self.pendulum = self.main_canvas.create_line(
-            self.height // 2,
-            self.width // 2,
-            (self.height // 2) + self.inner_circle_radius,
-            (self.width // 2)
+            self.inner_circle_x,
+            self.inner_circle_y,
+            self.inner_circle_x + self.inner_circle_radius,
+            self.inner_circle_y
         )
+
+    def stop_playback(self):
+        self.playback_stopped = True
 
     def animate_test(self):
         """Test animation - pendulum rotating 360° inside the inner circle"""
         self.update()
-        while True:
-            for i in range(1, 361):
-                time.sleep(1 / 60)
-                self.main_canvas.delete(self.pendulum)
-                self.main_canvas.delete(self.inner_circle)
-                self.main_canvas.delete(all)
+        pendulum_coords_list = []
+        for i in range(1, 361):
+            if self.playback_stopped:
+                self.playback_stopped = False
+                return
+            time.sleep(1 / 120)
+            self.main_canvas.delete(self.pendulum)
+            self.main_canvas.delete(self.inner_circle)
+            self.main_canvas.delete(all)
 
-                self.inner_circle_x, self.inner_circle_y = geometry.polar_to_cartesian_with_offset(
+            self.inner_circle_x, self.inner_circle_y = geometry.polar_to_cartesian_with_offset(
+                r=self.inner_circle_radius,
+                theta=i,
+                x_offset=self.center_x,
+                y_offset=self.center_y
+            )
+
+            self.inner_circle = self.circle(
+                x=self.inner_circle_x,
+                y=self.inner_circle_y,
+                r=self.inner_circle_radius
+            )
+
+            self.pendulum_end_x, self.pendulum_end_y = geometry.polar_to_cartesian_with_offset(
                     r=self.inner_circle_radius,
-                    theta=i,
-                    x_offset=self.center_x,
-                    y_offset=self.center_y
+                    theta=i*2,
+                    x_offset=self.inner_circle_x,
+                    y_offset=self.inner_circle_y
                 )
 
-                self.inner_circle = self.circle(
-                    x=self.inner_circle_x,
-                    y=self.inner_circle_y,
-                    r=self.inner_circle_radius
-                )
+            pendulum_coords_list.append((self.pendulum_end_x, self.pendulum_end_y))
 
-                self.pendulum_end_x, self.pendulum_end_y = geometry.polar_to_cartesian_with_offset(
-                        r=self.inner_circle_radius,
-                        theta=i*3,
-                        x_offset=self.inner_circle_x,
-                        y_offset=self.inner_circle_y
-                    )
+            self.pendulum = self.main_canvas.create_line(
+                self.inner_circle_x,
+                self.inner_circle_y,
+                self.pendulum_end_x,
+                self.pendulum_end_y
+            )
 
-                self.pendulum = self.main_canvas.create_line(
-                    self.inner_circle_x,
-                    self.inner_circle_y,
-                    self.pendulum_end_x,
-                    self.pendulum_end_y
+            self.main_canvas.tag_lower(self.pendulum)
+            self.main_canvas.tag_lower(self.inner_circle)
+            self.main_canvas.tag_lower(self.outer_circle)
 
-                )
-
+            if i > 2:
                 self.main_canvas.create_line(
-                    self.pendulum_end_x,
-                    self.pendulum_end_y,
-                    self.pendulum_end_x+1,
-                    self.pendulum_end_y+1,
-                    width=2,
+                    pendulum_coords_list,
+                    width=1,
+                    smooth=1,
                     fill='red',
-                    tag=all
                 )
 
-                self.update_idletasks()
-                self.update()
+            self.update_idletasks()
+            self.update()
 
