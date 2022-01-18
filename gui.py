@@ -4,6 +4,9 @@ GUI setup and drawing functions
 """
 
 import tkinter
+import time
+
+import geometry
 
 
 class MainGUI(tkinter.Tk):
@@ -19,13 +22,22 @@ class MainGUI(tkinter.Tk):
         self.outer_circle = None
         self.inner_circle = None
         self.pendulum = None
+        self.inner_circle_radius = 100
+        self.outer_circle_radius = 200
 
         self.main_canvas = tkinter.Canvas(
             height=800,
             width=800,
             background='white'
         )
-        self.main_canvas.pack()
+        self.main_canvas.place(x=0, y=0)
+
+        self.play_button = tkinter.Button(
+            text='PLAY',
+            command=self.animate_test
+        )
+        self.play_button.pack()
+
         self.draw_initial_setup()
 
     def circle(self, x=0, y=0, r=0):
@@ -46,5 +58,27 @@ class MainGUI(tkinter.Tk):
             r=100,
         )
 
-        # inner_circle_specs = self.main_canvas.coords(self.inner_circle)
-        # self.pendulum = self.main_canvas.create_line(self.main_canvas.coords(self.inner_circle))
+        self.pendulum = self.main_canvas.create_line(
+            self.height // 2,
+            self.width // 2,
+            (self.height // 2) + self.inner_circle_radius,
+            (self.width // 2)
+        )
+
+    def animate_test(self):
+        """Test animation - pendulum rotating 360° inside the inner circle"""
+        self.update()
+        for i in range(1, 361):
+            time.sleep(1 / 60)
+            self.main_canvas.delete(self.pendulum)
+            self.pendulum = self.main_canvas.create_line(
+                self.height // 2,
+                self.width // 2,
+                geometry.polar_to_cartesian_with_offset(
+                    r=self.inner_circle_radius,
+                    theta=i,
+                    x_offset=self.height // 2,
+                    y_offset=self.width // 2
+                )
+            )
+            self.update()

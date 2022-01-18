@@ -15,6 +15,13 @@ def cartesian_to_polar(x=0, y=0) -> tuple[float, float]:
 
 def polar_to_cartesian(r=0, theta=0) -> tuple[float, float]:
     """Takes polar coordinates as input and returns cartesian coordinates"""
-    x = r * math.cos(theta)
-    y = r * math.sin(theta)
+    x = r * math.cos(math.radians(theta))
+    y = r * math.sin(math.radians(theta))
+    return x, y
+
+
+def polar_to_cartesian_with_offset(r=0, theta=0, x_offset=0, y_offset=0) -> tuple[float, float]:
+    """Takes polar coordinates as input and returns cartesian coordinates"""
+    x = (r * math.cos(math.radians(theta))) + x_offset
+    y = (r * math.sin(math.radians(theta))) + y_offset
     return x, y
