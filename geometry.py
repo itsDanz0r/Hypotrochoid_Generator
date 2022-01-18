@@ -5,6 +5,36 @@ Geometry and other math needed to place objects
 
 import math
 
+import gui
+
+
+class Circle:
+    radius: float
+    center_x: float
+    center_y: float
+
+    def __init__(self, x, y, r, theta, canvas: gui.MainCanvas, parent=None):
+        self.center_x = x
+        self.center_y = y
+        self.radius = r
+        self.canvas = canvas
+        self.parent = parent
+        self.theta = theta
+
+    def calculate_position(self, theta):
+        if self.parent is None:
+            self.center_x = self.canvas.center_x
+            self.center_y = self.canvas.center_y
+        else:
+            self.center_x, self.center_y =
+    -+-*8
+    def draw(self):
+        """Draw a circle on the main canvas with specified attributes"""
+        x = self.center_x
+        y = self.center_y
+        r = self.radius
+        return self.canvas.create_oval(x + r, y + r, x - r, y - r)
+
 
 def cartesian_to_polar(x=0, y=0) -> tuple[float, float]:
     """Takes cartesian coordinates as input and returns polar coordinates"""
