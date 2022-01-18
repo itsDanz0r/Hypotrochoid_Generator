@@ -24,13 +24,16 @@ class MainGUI(tkinter.Tk):
         self.center_y = self.width // 2
 
         self.outer_circle = None
-        self.inner_circle = None
-        self.pendulum = None
+        self.outer_circle_radius = 200
 
-        self.inner_circle_radius = 100
+        self.inner_circle = None
+        self.inner_circle_radius = 100        
         self.inner_circle_x = self.center_x
         self.inner_circle_y = self.center_y
-        self.outer_circle_radius = 200
+
+        self.pendulum = None
+        self.pendulum_end_x = 0
+        self.pendulum_end_y = 0
 
         self.main_canvas = tkinter.Canvas(
             height=800,
@@ -75,34 +78,51 @@ class MainGUI(tkinter.Tk):
     def animate_test(self):
         """Test animation - pendulum rotating 360° inside the inner circle"""
         self.update()
-        for i in range(1, 361):
-            time.sleep(1 / 60)
-            self.main_canvas.delete(self.pendulum)
-            self.main_canvas.delete(self.inner_circle)
-            self.main_canvas.delete(all)
+        while True:
+            for i in range(1, 361):
+                time.sleep(1 / 60)
+                self.main_canvas.delete(self.pendulum)
+                self.main_canvas.delete(self.inner_circle)
+                self.main_canvas.delete(all)
 
-            self.inner_circle_x, self.inner_circle_y = geometry.polar_to_cartesian_with_offset(
-                r=self.inner_circle_radius,
-                theta=i,
-                x_offset=self.center_x,
-                y_offset=self.center_y
-            )
-
-            self.inner_circle = self.circle(
-                x=self.inner_circle_x,
-                y=self.inner_circle_y,
-                r=self.inner_circle_radius
-            )
-            
-            self.pendulum = self.main_canvas.create_line(
-                self.inner_circle_x,
-                self.inner_circle_y,
-                geometry.polar_to_cartesian_with_offset(
+                self.inner_circle_x, self.inner_circle_y = geometry.polar_to_cartesian_with_offset(
                     r=self.inner_circle_radius,
-                    theta=i*2,
-                    x_offset=self.inner_circle_x,
-                    y_offset=self.inner_circle_y
+                    theta=i,
+                    x_offset=self.center_x,
+                    y_offset=self.center_y
                 )
-            )
-            self.update()
-            self.update_idletasks()
+
+                self.inner_circle = self.circle(
+                    x=self.inner_circle_x,
+                    y=self.inner_circle_y,
+                    r=self.inner_circle_radius
+                )
+
+                self.pendulum_end_x, self.pendulum_end_y = geometry.polar_to_cartesian_with_offset(
+                        r=self.inner_circle_radius,
+                        theta=i*3,
+                        x_offset=self.inner_circle_x,
+                        y_offset=self.inner_circle_y
+                    )
+
+                self.pendulum = self.main_canvas.create_line(
+                    self.inner_circle_x,
+                    self.inner_circle_y,
+                    self.pendulum_end_x,
+                    self.pendulum_end_y
+
+                )
+
+                self.main_canvas.create_line(
+                    self.pendulum_end_x,
+                    self.pendulum_end_y,
+                    self.pendulum_end_x+1,
+                    self.pendulum_end_y+1,
+                    width=2,
+                    fill='red',
+                    tag=all
+                )
+
+                self.update_idletasks()
+                self.update()
+
