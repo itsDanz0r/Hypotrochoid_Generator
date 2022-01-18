@@ -1,3 +1,8 @@
+"""
+Hypotrochoid Generator - main.py
+Core app module
+"""
+
 import gui
 
 
