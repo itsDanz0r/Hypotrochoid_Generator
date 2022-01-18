@@ -5,6 +5,7 @@ GUI setup and drawing functions
 
 import tkinter
 import time
+import math
 
 
 class MainCanvas(tkinter.Canvas):
@@ -28,14 +29,7 @@ class MainCanvas(tkinter.Canvas):
 
         self.trace = None
 
-        self.outer_circle = None
-        self.outer_circle_radius = 200
-
-        self.inner_circle = None
-        self.inner_circle_radius = 100
-        self.inner_circle_x = self.center_x
-        self.inner_circle_y = self.center_y
-        self.inner_circle_theta_mod = 2.0
+        self.circles = []
 
         self.pendulum = None
         self.pendulum_end_x = 0
@@ -49,24 +43,15 @@ class MainCanvas(tkinter.Canvas):
 
     def draw_initial_setup(self):
         """Draw all components on canvas at default settings"""
-        self.outer_circle = self.circle(
-            x=self.center_x,
-            y=self.center_y,
-            r=200,
+        self.circles = [
+            Circle(200, 0, self, None),
+        ]
+        self.circles.append(
+            Circle(100, 0, self, self.circles[0])
         )
 
-        self.inner_circle = self.circle(
-            x=self.center_x,
-            y=self.center_y,
-            r=100,
-        )
-
-        self.pendulum = self.create_line(
-            self.inner_circle_x,
-            self.inner_circle_y,
-            self.inner_circle_x + self.inner_circle_radius,
-            self.inner_circle_y
-        )
+        for circle in self.circles:
+            circle.draw()
 
     def stop_playback(self):
         """Sets flag so that drawing stops on next trace calculation"""
@@ -80,15 +65,6 @@ class MainCanvas(tkinter.Canvas):
             y_offset=self.inner_circle_y
         )
         return self.inner_circle_x, self.inner_circle_y, self.pendulum_end_x, self.pendulum_end_y
-
-    def calculate_inner_circle_coords(self, r=0, theta=0):
-        self.inner_circle_x, self.inner_circle_y = geometry.polar_to_cartesian_with_offset(
-            r=r,
-            theta=theta * self.inner_circle_theta_mod,
-            x_offset=self.center_x,
-            y_offset=self.center_y
-        )
-        return
 
     def animate_test(self):
         """Test animation - pendulum rotating 360° inside the inner circle"""
@@ -143,6 +119,41 @@ class MainCanvas(tkinter.Canvas):
             self.update()
 
 
+class Circle:
+    radius: float
+    theta: float
+    theta_mod: float
+
+    def __init__(self, r: float, theta: float, canvas: MainCanvas, parent=None):
+        self.center_x = 0.0
+        self.center_y = 0.0
+        self.radius = r
+        self.canvas = canvas
+        self.parent = parent
+        self.theta = theta
+        self.theta_mod = 1
+        self.calculate_position()
+
+    def calculate_position(self):
+        if self.parent is None:
+            self.center_x = self.canvas.center_x
+            self.center_y = self.canvas.center_y
+        else:
+            self.center_x, self.center_y = polar_to_cartesian_with_offset(
+                r=self.radius,
+                theta=self.theta * self.theta_mod,
+                x_offset=self.parent.center_x,
+                y_offset=self.parent.center_y
+            )
+
+    def draw(self):
+        """Draw a circle on the main canvas with specified attributes"""
+        x = self.center_x
+        y = self.center_y
+        r = self.radius
+        return self.canvas.create_oval(x + r, y + r, x - r, y - r)
+
+
 class MainGUI(tkinter.Tk):
 
     def __init__(self):
@@ -171,3 +182,24 @@ class MainGUI(tkinter.Tk):
             command=self.main_canvas.stop_playback
         )
         self.stop_button.pack()
+
+
+def cartesian_to_polar(x=0.0, y=0.0) -> tuple[float, float]:
+    """Takes cartesian coordinates as input and returns polar coordinates"""
+    r = math.sqrt(x ** 2 + y ** 2)
+    theta = math.atan(y / x)
+    return r, theta
+
+
+def polar_to_cartesian(r=0.0, theta=0.0) -> tuple[float, float]:
+    """Takes polar coordinates as input and returns cartesian coordinates"""
+    x = r * math.cos(math.radians(theta))
+    y = r * math.sin(math.radians(theta))
+    return x, y
+
+
+def polar_to_cartesian_with_offset(r=0.0, theta=0.0, x_offset=0.0, y_offset=0.0) -> tuple[float, float]:
+    """Takes polar coordinates as input and returns cartesian coordinates"""
+    x = (r * math.cos(math.radians(theta))) + x_offset
+    y = (r * math.sin(math.radians(theta))) + y_offset
+    return x, y
