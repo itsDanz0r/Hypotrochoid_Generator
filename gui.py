@@ -8,20 +8,15 @@ import time
 import geometry
 
 
-class MainGUI(tkinter.Tk):
-    main_canvas: tkinter.Canvas
-
-    def __init__(self):
+class MainCanvas(tkinter.Canvas):
+    def __init__(self, parent):
         super().__init__()
-        self.title('Hypotrochoid Generator')
-
-        self.height = 800
-        self.width = 800
-        self.geometry(f'{self.height}x{self.width}')
-
-        self.center_x = self.height // 2
-        self.center_y = self.width // 2
-
+        self.configure(
+            height=800,
+            width=800,
+            background='white'
+        )
+        self.parent = parent
         self.fps = 60
 
         self.trace = None
@@ -31,8 +26,8 @@ class MainGUI(tkinter.Tk):
 
         self.inner_circle = None
         self.inner_circle_radius = 100
-        self.inner_circle_x = self.center_x
-        self.inner_circle_y = self.center_y
+        self.inner_circle_x = self.parent.center_x
+        self.inner_circle_y = self.parent.center_y
         self.inner_circle_theta_mod = 1.0
 
         self.pendulum = None
@@ -42,46 +37,27 @@ class MainGUI(tkinter.Tk):
 
         self.playback_stopped = False
 
-        self.main_canvas = tkinter.Canvas(
-            height=800,
-            width=800,
-            background='white'
-        )
-        self.main_canvas.place(x=0, y=0)
-
-        self.play_button = tkinter.Button(
-            text='PLAY',
-            command=self.animate_test
-        )
-        self.play_button.pack()
-
-        self.stop_button = tkinter.Button(
-            text='STOP',
-            command=self.stop_playback
-        )
-        self.stop_button.pack()
-
         self.draw_initial_setup()
 
     def circle(self, x=0.0, y=0.0, r=0.0):
         """Draw a circle on the main canvas with specified attributes"""
-        return self.main_canvas.create_oval(x + r, y + r, x - r, y - r)
+        return self.create_oval(x + r, y + r, x - r, y - r)
 
     def draw_initial_setup(self):
         """Draw all components on canvas at default settings"""
         self.outer_circle = self.circle(
-            x=self.center_x,
-            y=self.center_y,
+            x=self.parent.center_x,
+            y=self.parent.center_y,
             r=200,
         )
 
         self.inner_circle = self.circle(
-            x=self.center_x,
-            y=self.center_y,
+            x=self.parent.center_x,
+            y=self.parent.center_y,
             r=100,
         )
 
-        self.pendulum = self.main_canvas.create_line(
+        self.pendulum = self.create_line(
             self.inner_circle_x,
             self.inner_circle_y,
             self.inner_circle_x + self.inner_circle_radius,
@@ -105,8 +81,8 @@ class MainGUI(tkinter.Tk):
         self.inner_circle_x, self.inner_circle_y = geometry.polar_to_cartesian_with_offset(
             r=r,
             theta=theta * self.inner_circle_theta_mod,
-            x_offset=self.center_x,
-            y_offset=self.center_y
+            x_offset=self.parent.center_x,
+            y_offset=self.parent.center_y
         )
         return
 
@@ -122,10 +98,12 @@ class MainGUI(tkinter.Tk):
             # Division here determines frame rate if program running full speed
             time.sleep(1 / self.fps)
 
-            self.main_canvas.delete(self.pendulum)
-            self.main_canvas.delete(self.inner_circle)
-            self.main_canvas.delete(self.trace)
+            # Clear current positions
+            self.delete(self.pendulum)
+            self.delete(self.inner_circle)
+            self.delete(self.trace)
 
+            # Calculate and draw inner circle
             self.calculate_inner_circle_coords(self.inner_circle_radius, i)
             self.inner_circle = self.circle(
                 x=self.inner_circle_x,
@@ -133,27 +111,24 @@ class MainGUI(tkinter.Tk):
                 r=self.inner_circle_radius
             )
 
-            # Every 4 calculations add new coordinates to list
-            # This will need a setting so it can be turned up or down, affects performance
-
-            # Draw pendulum
-            self.pendulum = self.main_canvas.create_line(
+            # Calculate and draw pendulum
+            self.pendulum = self.create_line(
                 self.calculate_pendulum_coords(self.inner_circle_radius, i)
             )
 
-            # Add to coords list every 4 frames
+            # Add to coords list every 4 calculations
             # Needs to be adjustable, affects performance and quality
             if i % 4 == 0:
                 pendulum_coords_list.append((self.pendulum_end_x, self.pendulum_end_y))
 
             # Lower Z-index of both circles and pendulum so trace is more visible
-            self.main_canvas.tag_lower(self.pendulum)
-            self.main_canvas.tag_lower(self.inner_circle)
-            self.main_canvas.tag_lower(self.outer_circle)
+            self.tag_lower(self.pendulum)
+            self.tag_lower(self.inner_circle)
+            self.tag_lower(self.outer_circle)
 
             # Only begin drawing after 8 frames to allow minimum coordinates in list
             if i > 7:
-                self.trace = self.main_canvas.create_line(
+                self.trace = self.create_line(
                     pendulum_coords_list,
                     width=1,
                     smooth=1,
@@ -163,3 +138,32 @@ class MainGUI(tkinter.Tk):
             self.update_idletasks()
             self.update()
 
+
+class MainGUI(tkinter.Tk):
+
+    def __init__(self):
+        super().__init__()
+        self.title('Hypotrochoid Generator')
+
+        self.height = 800
+        self.width = 800
+        self.geometry(f'{self.height}x{self.width}')
+
+        self.center_x = self.height // 2
+        self.center_y = self.width // 2
+
+        self.main_canvas = MainCanvas(self)
+
+        self.main_canvas.place(x=0, y=0)
+
+        self.play_button = tkinter.Button(
+            text='PLAY',
+            command=self.main_canvas.animate_test
+        )
+        self.play_button.pack()
+
+        self.stop_button = tkinter.Button(
+            text='STOP',
+            command=self.main_canvas.stop_playback
+        )
+        self.stop_button.pack()
