@@ -30,12 +30,13 @@ class MainCanvas(tkinter.Canvas):
         self.trace = None
 
         self.circles = []
+        self.inner_circle = None
 
         self.pendulum = None
         self.pendulum_end_x = 0
         self.pendulum_end_y = 0
-        self.pendulum_theta_mod = 3
-        self.pendulum_length_mod = 0.7
+        self.pendulum_theta_mod = 1
+        self.pendulum_length_mod = 1
 
         self.playback_stopped = False
 
@@ -46,25 +47,35 @@ class MainCanvas(tkinter.Canvas):
         self.circles = [
             Circle(200, 0, self, None),
         ]
+
         self.circles.append(
             Circle(100, 0, self, self.circles[0])
+        )
+
+        self.circles.append(
+            Circle(80, 0, self, self.circles[1])
         )
 
         for circle in self.circles:
             circle.draw()
 
+        self.inner_circle = self.circles[-1]
+        self.pendulum = self.create_line(
+            self.calculate_pendulum_coords(self.inner_circle.radius, 0)
+        )
+
+    def calculate_pendulum_coords(self, r, theta):
+        self.pendulum_end_x, self.pendulum_end_y = polar_to_cartesian_with_offset(
+            r=r * self.pendulum_length_mod,
+            theta=theta * self.pendulum_theta_mod,
+            x_offset=self.inner_circle.center_x,
+            y_offset=self.inner_circle.center_y
+        )
+        return self.inner_circle.center_x, self.inner_circle.center_y, self.pendulum_end_x, self.pendulum_end_y
+
     def stop_playback(self):
         """Sets flag so that drawing stops on next trace calculation"""
         self.playback_stopped = True
-
-    def calculate_pendulum_coords(self, r, theta):
-        self.pendulum_end_x, self.pendulum_end_y = geometry.polar_to_cartesian_with_offset(
-            r=r * self.pendulum_length_mod,
-            theta=theta * self.pendulum_theta_mod,
-            x_offset=self.inner_circle_x,
-            y_offset=self.inner_circle_y
-        )
-        return self.inner_circle_x, self.inner_circle_y, self.pendulum_end_x, self.pendulum_end_y
 
     def animate_test(self):
         """Test animation - pendulum rotating 360° inside the inner circle"""
@@ -79,21 +90,14 @@ class MainCanvas(tkinter.Canvas):
             time.sleep(1 / self.fps)
 
             # Clear current positions
-            self.delete(self.pendulum)
-            self.delete(self.inner_circle)
-            self.delete(self.trace)
+            self.delete("all")
+            for circle in self.circles:
+                circle.theta = i
+                circle.calculate_position()
+                circle.draw()
 
-            # Calculate and draw inner circle
-            self.calculate_inner_circle_coords(self.inner_circle_radius, i)
-            self.inner_circle = self.circle(
-                x=self.inner_circle_x,
-                y=self.inner_circle_y,
-                r=self.inner_circle_radius
-            )
-
-            # Calculate and draw pendulum
             self.pendulum = self.create_line(
-                self.calculate_pendulum_coords(self.inner_circle_radius, i)
+                self.calculate_pendulum_coords(self.inner_circle.radius, i)
             )
 
             # Add to coords list every 4 calculations
@@ -101,10 +105,10 @@ class MainCanvas(tkinter.Canvas):
             if i % 4 == 0:
                 pendulum_coords_list.append((self.pendulum_end_x, self.pendulum_end_y))
 
-            # Lower Z-index of both circles and pendulum so trace is more visible
+            # Lower Z-index of all circles and pendulum so trace is more visible
             self.tag_lower(self.pendulum)
-            self.tag_lower(self.inner_circle)
-            self.tag_lower(self.outer_circle)
+            for circle in self.circles:
+                self.tag_lower(circle)
 
             # Only begin drawing after 8 frames to allow minimum coordinates in list
             if i > 7:
@@ -124,7 +128,7 @@ class Circle:
     theta: float
     theta_mod: float
 
-    def __init__(self, r: float, theta: float, canvas: MainCanvas, parent=None):
+    def __init__(self, r: float = 10, theta: float = 0, canvas: MainCanvas = None, parent=None):
         self.center_x = 0.0
         self.center_y = 0.0
         self.radius = r
@@ -138,10 +142,11 @@ class Circle:
         if self.parent is None:
             self.center_x = self.canvas.center_x
             self.center_y = self.canvas.center_y
+
         else:
             self.center_x, self.center_y = polar_to_cartesian_with_offset(
-                r=self.radius,
-                theta=self.theta * self.theta_mod,
+                r=self.parent.radius - self.radius,
+                theta=self.parent.theta,
                 x_offset=self.parent.center_x,
                 y_offset=self.parent.center_y
             )
