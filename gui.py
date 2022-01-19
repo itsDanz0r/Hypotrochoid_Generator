@@ -25,7 +25,7 @@ class MainCanvas(tkinter.Canvas):
         self.center_y = self.width // 2
 
         self.parent = parent
-        self.fps = 120
+        self.fps = 60
 
         self.trace = None
         self.trace_coords = []
@@ -37,7 +37,7 @@ class MainCanvas(tkinter.Canvas):
         self.pendulum_end_x = 0
         self.pendulum_end_y = 0
         self.pendulum_theta_mod = 1
-        self.pendulum_length_mod = 1.3
+        self.pendulum_length_mod = 1
 
         self.playback_stopped = True
         self.playback_frame = 1
@@ -51,11 +51,15 @@ class MainCanvas(tkinter.Canvas):
         ]
 
         self.circles.append(
-            Circle(207, 0, self, self.circles[0])
+            Circle(107, 0, self, self.circles[0])
         )
 
         self.circles.append(
             Circle(133, 0, self, self.circles[1])
+        )
+
+        self.circles.append(
+            Circle(91, 0, self, self.circles[2])
         )
 
         for circle in self.circles:
@@ -124,8 +128,7 @@ class MainCanvas(tkinter.Canvas):
 
             # Add to coords list every 4 calculations
             # Needs to be adjustable, affects performance and quality
-            if i % 4 == 0:
-                self.trace_coords.append((self.pendulum_end_x, self.pendulum_end_y))
+            self.trace_coords.append((self.pendulum_end_x, self.pendulum_end_y))
 
             # Lower Z-index of all circles and pendulum so trace is more visible
             self.tag_lower(self.pendulum)
@@ -146,10 +149,10 @@ class MainCanvas(tkinter.Canvas):
 
     def draw_many(self):
         self.trace_coords = []
-        self.circles[1].theta_mod = 1.7439
-        self.circles[2].theta_mod = 1.333
-        self.pendulum_theta_mod = 0.3333
-        self.pendulum_length_mod = 0.9
+        self.circles[1].theta_mod = 7
+        self.circles[2].theta_mod = 13
+        self.pendulum_theta_mod = 23
+        self.pendulum_length_mod = 1
         self.delete('all')
 
         for i in range(0, 50000):
@@ -157,8 +160,7 @@ class MainCanvas(tkinter.Canvas):
                 circle.theta = i
                 circle.calculate_position()
             self.calculate_pendulum_coords(self.inner_circle.radius, i)
-            if i % 4 == 0:
-                self.trace_coords.append((self.pendulum_end_x, self.pendulum_end_y))
+            self.trace_coords.append((self.pendulum_end_x, self.pendulum_end_y))
 
         self.trace = self.create_line(
             self.trace_coords,
