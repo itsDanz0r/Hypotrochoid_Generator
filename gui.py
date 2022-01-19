@@ -28,6 +28,7 @@ class MainCanvas(tkinter.Canvas):
         self.fps = 120
 
         self.trace = None
+        self.trace_coords = []
 
         self.circles = []
         self.inner_circle = None
@@ -36,9 +37,10 @@ class MainCanvas(tkinter.Canvas):
         self.pendulum_end_x = 0
         self.pendulum_end_y = 0
         self.pendulum_theta_mod = 1
-        self.pendulum_length_mod = 1
+        self.pendulum_length_mod = 1.3
 
-        self.playback_stopped = False
+        self.playback_stopped = True
+        self.playback_frame = 1
 
         self.draw_initial_setup()
 
@@ -73,17 +75,36 @@ class MainCanvas(tkinter.Canvas):
         )
         return self.inner_circle.center_x, self.inner_circle.center_y, self.pendulum_end_x, self.pendulum_end_y
 
+    def reset_playback(self):
+        self.delete('all')
+        self.draw_initial_setup()
+        self.playback_frame = 1
+
+    def resume_playback(self):
+        self.animate_test()
+
     def stop_playback(self):
         """Sets flag so that drawing stops on next trace calculation"""
         self.playback_stopped = True
 
     def animate_test(self):
         """Test animation - pendulum rotating 360° inside the inner circle"""
-        pendulum_coords_list = []
+        # TEMPORARY - Mess with theta mods for chaos testing
+        self.playback_stopped = False
+        self.circles[1].theta_mod = 1.35
+        self.circles[2].theta_mod = 2.63
+        self.pendulum_theta_mod = 1.19
+
         # i represents number of rotations to calculate
-        for i in range(1, 3601):
+        for i in range(self.playback_frame, 36001):
             if self.playback_stopped:
-                self.playback_stopped = False
+                self.playback_frame = i
+                self.parent.stop_button.configure(
+                    text='RESET'
+                )
+                self.parent.play_button.configure(
+                    text='RESUME'
+                )
                 return
 
             # Division here determines frame rate if program running full speed
@@ -91,11 +112,14 @@ class MainCanvas(tkinter.Canvas):
 
             # Clear current positions
             self.delete("all")
+
+            # Draw circles
             for circle in self.circles:
                 circle.theta = i
                 circle.calculate_position()
                 circle.draw()
 
+            # Draw pendulum
             self.pendulum = self.create_line(
                 self.calculate_pendulum_coords(self.inner_circle.radius, i)
             )
@@ -103,7 +127,7 @@ class MainCanvas(tkinter.Canvas):
             # Add to coords list every 4 calculations
             # Needs to be adjustable, affects performance and quality
             if i % 4 == 0:
-                pendulum_coords_list.append((self.pendulum_end_x, self.pendulum_end_y))
+                self.trace_coords.append((self.pendulum_end_x, self.pendulum_end_y))
 
             # Lower Z-index of all circles and pendulum so trace is more visible
             self.tag_lower(self.pendulum)
@@ -113,7 +137,7 @@ class MainCanvas(tkinter.Canvas):
             # Only begin drawing after 8 frames to allow minimum coordinates in list
             if i > 7:
                 self.trace = self.create_line(
-                    pendulum_coords_list,
+                    self.trace_coords,
                     width=1,
                     smooth=1,
                     fill='red',
@@ -146,7 +170,7 @@ class Circle:
         else:
             self.center_x, self.center_y = polar_to_cartesian_with_offset(
                 r=self.parent.radius - self.radius,
-                theta=self.parent.theta,
+                theta=self.theta * self.theta_mod,
                 x_offset=self.parent.center_x,
                 y_offset=self.parent.center_y
             )
@@ -178,7 +202,7 @@ class MainGUI(tkinter.Tk):
 
         self.play_button = tkinter.Button(
             text='PLAY',
-            command=self.main_canvas.animate_test
+            command=self.play_button
         )
         self.play_button.pack()
 
@@ -187,6 +211,32 @@ class MainGUI(tkinter.Tk):
             command=self.main_canvas.stop_playback
         )
         self.stop_button.pack()
+
+    def play_button(self):
+        if self.main_canvas.playback_stopped:
+            self.main_canvas.playback_stopped = False
+            self.main_canvas.resume_playback()
+
+        else:
+            self.main_canvas.animate_test()
+
+    def stop_button(self):
+        if self.main_canvas.playback_stopped:
+            self.main_canvas.playback_stopped = False
+            self.main_canvas.delete('all')
+            self.main_canvas.draw_initial_setup()
+            self.stop_button.configure(
+                text='STOP'
+            )
+
+        else:
+            self.main_canvas.stop_playback()
+            self.stop_button.configure(
+                text='RESET'
+            )
+            self.play_button.configure(
+                text='RESUME'
+            )
 
 
 def cartesian_to_polar(x=0.0, y=0.0) -> tuple[float, float]:
