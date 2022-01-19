@@ -12,8 +12,8 @@ class MainCanvas(tkinter.Canvas):
     def __init__(self, parent):
         super().__init__()
 
-        self.height = 800
-        self.width = 800
+        self.height = 1200
+        self.width = 1200
 
         self.configure(
             height=self.height,
@@ -47,15 +47,15 @@ class MainCanvas(tkinter.Canvas):
     def draw_initial_setup(self):
         """Draw all components on canvas at default settings"""
         self.circles = [
-            Circle(200, 0, self, None),
+            Circle(400, 0, self, None),
         ]
 
         self.circles.append(
-            Circle(100, 0, self, self.circles[0])
+            Circle(207, 0, self, self.circles[0])
         )
 
         self.circles.append(
-            Circle(80, 0, self, self.circles[1])
+            Circle(133, 0, self, self.circles[1])
         )
 
         for circle in self.circles:
@@ -90,10 +90,8 @@ class MainCanvas(tkinter.Canvas):
     def animate_test(self):
         """Test animation - pendulum rotating 360° inside the inner circle"""
         # TEMPORARY - Mess with theta mods for chaos testing
+        self.trace_coords = []
         self.playback_stopped = False
-        self.circles[1].theta_mod = 1.35
-        self.circles[2].theta_mod = 2.63
-        self.pendulum_theta_mod = 1.19
 
         # i represents number of rotations to calculate
         for i in range(self.playback_frame, 36001):
@@ -146,6 +144,31 @@ class MainCanvas(tkinter.Canvas):
             self.update_idletasks()
             self.update()
 
+    def draw_many(self):
+        self.trace_coords = []
+        self.circles[1].theta_mod = 1.7439
+        self.circles[2].theta_mod = 1.333
+        self.pendulum_theta_mod = 0.3333
+        self.pendulum_length_mod = 0.9
+        self.delete('all')
+
+        for i in range(0, 50000):
+            for circle in self.circles:
+                circle.theta = i
+                circle.calculate_position()
+            self.calculate_pendulum_coords(self.inner_circle.radius, i)
+            if i % 4 == 0:
+                self.trace_coords.append((self.pendulum_end_x, self.pendulum_end_y))
+
+        self.trace = self.create_line(
+            self.trace_coords,
+            width=1,
+            smooth=1,
+            fill='red',
+        )
+        self.update_idletasks()
+        self.update()
+
 
 class Circle:
     radius: float
@@ -189,8 +212,8 @@ class MainGUI(tkinter.Tk):
         super().__init__()
         self.title('Hypotrochoid Generator')
 
-        self.height = 800
-        self.width = 800
+        self.height = 1200
+        self.width = 1200
         self.geometry(f'{self.height}x{self.width}')
 
         self.center_x = self.height // 2
@@ -211,6 +234,12 @@ class MainGUI(tkinter.Tk):
             command=self.main_canvas.stop_playback
         )
         self.stop_button.pack()
+
+        self.draw_many_button = tkinter.Button(
+            text='DRAW MANY',
+            command=self.main_canvas.draw_many
+        )
+        self.draw_many_button.pack()
 
     def play_button(self):
         if self.main_canvas.playback_stopped:
