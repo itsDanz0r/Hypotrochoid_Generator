@@ -23,8 +23,7 @@ class MainCanvas(tkinter.Canvas):
             background='white'
         )
 
-        self.center_x = self.height // 2
-        self.center_y = self.width // 2
+        self.center = (self.height // 2, self.width // 2)
 
         self.parent = parent
         self.fps = 60
@@ -168,8 +167,7 @@ class MainGUI(tkinter.Tk):
         self.height = 1200
         self.width = 1200
         self.geometry(f'{self.height}x{self.width}')
-        self.center_x = self.height // 2
-        self.center_y = self.width // 2
+        self.center = (self.height // 2, self.width // 2)
 
         # Define and pack widgets
         self.main_canvas = MainCanvas(self)
@@ -192,14 +190,13 @@ class MainGUI(tkinter.Tk):
             command=self.main_canvas.draw_many
         )
         self.draw_many_button.pack()
-        self.hide_circles = tkinter.Checkbutton(
-            text='Hide Circles',
-            variable=self.main_canvas.hide_drawing,
-            onvalue=True,
-            offvalue=False,
-            command=self.test_check
-        )
-        self.hide_circles.pack()
+        # self.hide_circles = tkinter.Checkbutton(
+        #     text='Hide Circles',
+        #     variable=self.main_canvas.hide_drawing,
+        #     onvalue=True,
+        #     offvalue=False,
+        # )
+        # self.hide_circles.pack()
 
     def play_button(self) -> None:
         """Define behaviour of play button"""

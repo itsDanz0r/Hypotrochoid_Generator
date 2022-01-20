@@ -17,8 +17,7 @@ class Circle(CanvasDrawing):
     """Defines linked list of circles on canvas"""
 
     def __init__(self, r: float = 10, theta: float = 0, canvas=None, parent=None):
-        self.center_x = 0.0
-        self.center_y = 0.0
+        self.center = (0.0, 0.0)
         self.radius = r
         self.canvas = canvas
         self.parent = parent
@@ -30,21 +29,19 @@ class Circle(CanvasDrawing):
     def calculate_position(self) -> None:
         """Calculate current position based on current properties"""
         if self.parent is None:
-            self.center_x = self.canvas.center_x
-            self.center_y = self.canvas.center_y
+            self.center = self.canvas.center
 
         else:
-            self.center_x, self.center_y = polar_to_cartesian_with_offset(
+            self.center = polar_to_cartesian_with_offset(
                 r=self.parent.radius - self.radius,
                 theta=self.theta * self.theta_mod,
-                x_offset=self.parent.center_x,
-                y_offset=self.parent.center_y
+                x_offset=self.parent.center[0],
+                y_offset=self.parent.center[1]
             )
 
     def draw(self) -> None:
         """Draw a circle on the main canvas with specified dimensions and location"""
-        x = self.center_x
-        y = self.center_y
+        x, y = self.center
         r = self.radius
         self.canvas_repr = self.canvas.create_oval(x + r, y + r, x - r, y - r)
 
@@ -57,7 +54,7 @@ class Arm(ABC):
     def __init__(self, parent: Circle, canvas):
         self.canvas = canvas
         self.parent = parent
-        self.start_coords = (self.parent.center_x, self.parent.center_y)
+        self.start_coords = self.parent.center
         self.end_coords = (0, 0)
         self.length_mod = 1
         self.theta = 1
@@ -66,12 +63,12 @@ class Arm(ABC):
 
     def calculate_position(self) -> None:
         """Calculate arm start and end position"""
-        self.start_coords = (self.parent.center_x, self.parent.center_y)
+        self.start_coords = self.parent.center
         self.end_coords = polar_to_cartesian_with_offset(
             r=self.parent.radius * self.length_mod,
             theta=self.theta * self.theta_mod,
-            x_offset=self.parent.center_x,
-            y_offset=self.parent.center_y
+            x_offset=self.parent.center[0],
+            y_offset=self.parent.center[1]
         )
 
     def draw(self) -> None:
