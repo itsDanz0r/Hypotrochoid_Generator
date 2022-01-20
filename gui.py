@@ -6,7 +6,6 @@ GUI setup and drawing functions
 import tkinter
 import time
 import math
-import typing
 
 
 class MainCanvas(tkinter.Canvas):
@@ -43,6 +42,9 @@ class MainCanvas(tkinter.Canvas):
 
         self.playback_stopped = True
         self.playback_frame = 1
+
+        self.hide_drawing = tkinter.BooleanVar()
+        self.hide_drawing.set(False)
 
         self.draw_initial_setup()
 
@@ -95,6 +97,7 @@ class MainCanvas(tkinter.Canvas):
     def animate_test(self) -> None:
         """Test animation - pendulum rotating 360° inside the inner circle"""
         # TEMPORARY - Mess with theta mods for chaos testing
+        self.circles[1].theta_mod = -1
         self.trace_coords = []
         self.playback_stopped = False
 
@@ -120,12 +123,18 @@ class MainCanvas(tkinter.Canvas):
             for circle in self.circles:
                 circle.theta = i
                 circle.calculate_position()
-                circle.draw()
+
+                if self.hide_drawing:
+                    circle.draw()
 
             # Draw pendulum
-            self.pendulum = self.create_line(
+
+            if self.hide_drawing:
+                self.pendulum = self.create_line(
+                    self.calculate_pendulum_coords(self.inner_circle.radius, -i)
+                )
+            else:
                 self.calculate_pendulum_coords(self.inner_circle.radius, -i)
-            )
 
             # Add to coords list every 4 calculations
             # Needs to be adjustable, affects performance and quality
@@ -151,13 +160,12 @@ class MainCanvas(tkinter.Canvas):
     def draw_many(self) -> None:
         """Calculates and draws a specified number of frames in one step"""
         self.trace_coords = []
-        self.circles[1].theta_mod = 2.11
-        self.circles[2].theta_mod = 2.71
-        self.pendulum_theta_mod = -0.9
-        self.pendulum_length_mod = 2
+        self.pendulum_length_mod = 2.0
+        self.circles[1].theta_mod = -2
+        self.pendulum_theta_mod = 0.391
         self.delete('all')
 
-        for i in range(0, 36000):
+        for i in range(0, 40000):
             for circle in self.circles:
                 circle.theta = i
                 circle.calculate_position()
@@ -243,6 +251,17 @@ class MainGUI(tkinter.Tk):
             command=self.main_canvas.draw_many
         )
         self.draw_many_button.pack()
+        self.hide_circles = tkinter.Checkbutton(
+            text='Hide Circles',
+            variable=self.main_canvas.hide_drawing,
+            onvalue=True,
+            offvalue=False,
+            command=self.test_check
+        )
+        self.hide_circles.pack()
+
+    def test_check(self):
+        print(self.main_canvas.hide_drawing.get())
 
     def play_button(self) -> None:
         """Define behaviour of play button"""
