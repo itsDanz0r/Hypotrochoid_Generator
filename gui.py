@@ -6,7 +6,8 @@ GUI setup and drawing functions
 import tkinter
 import time
 import geometry
-from PIL import Image
+from PIL import Image, ImageDraw
+from random import randint
 
 
 class SidebarFrame(tkinter.Frame):
@@ -48,30 +49,31 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.playback_frame = 1
 
+        self.rotation_mod = 10
+
         self.hide_drawing = tkinter.BooleanVar()
         self.hide_drawing.set(False)
 
-        self.img_output_res_mod = 20
+        self.img_output_res_mod = 5
 
         self.initial_setup()
+        self.calc_start = time.time()
 
     def initial_setup(self) -> None:
         """Draw all components on canvas at default settings"""
         self.circles = [
-            geometry.Circle(250, 0, self, None),
+            geometry.Circle(300, 0, self, None),
         ]
 
         self.circles.append(
-            geometry.Circle(200.1, 0, self, self.circles[0])
+            geometry.Circle(175.01, 0, self, self.circles[0])
         )
 
         self.circles.append(
-            geometry.Circle(100.1, 0, self, self.circles[1])
+            geometry.Circle(120., 0, self, self.circles[1])
         )
 
-        self.circles.append(
-            geometry.Circle(50.1, 0, self, self.circles[2])
-        )
+
 
         self.inner_circle = self.circles[-1]
         for i in range(len(self.circles)):
@@ -105,7 +107,7 @@ class MainCanvas(tkinter.Canvas):
 
     def apply_mods(self):
         self.arm.theta_mod = -1
-        self.arm.length_mod = 1
+        self.arm.length_mod = 1.19
 
     def calculate_positions(self, i) -> None:
         """Calculates all canvas drawing object positions"""
@@ -115,7 +117,7 @@ class MainCanvas(tkinter.Canvas):
             circle.calculate_position()
         self.arm.theta = -self.arm.parent.theta * (self.arm.parent.parent.radius / self.arm.parent.radius)
         self.arm.calculate_position()
-        self.tracer.coords.append(self.arm.end_coords)
+        self.tracer.coords.append((round(self.arm.end_coords[0], 4), round(self.arm.end_coords[1], 4)))
 
     def animate(self) -> None:
         """Test animation - pendulum rotating 360° inside the inner circle"""
@@ -156,35 +158,52 @@ class MainCanvas(tkinter.Canvas):
         self.tracer.coords = []
         self.delete('all')
         self.apply_mods()
+        self.calc_start = time.time()
+        print(f'Calculating {self.rotation_mod} rotations...')
 
-        print('Calculating...')
-        for i in range(0, 7200000):
+        iterations = 36000 * self.rotation_mod
+        for i in range(0, iterations):
             self.calculate_positions(i / 100)
-
-        self.tracer.draw()
-
+        print(f'Completed in {time.time() - self.calc_start} seconds')
         self.create_img()
+        self.tracer.draw()
+        self.update()
 
     def calculate_img_canvas_size(self) -> tuple[float, float]:
-        size = round(((self.circles[0].radius * 2) + (self.circles[-1].radius * self.arm.length_mod) + 100) * \
-                     (self.img_output_res_mod * 1.5))
-        print(size)
+        size = round(((self.circles[0].radius * 2) + (self.circles[-1].radius * self.arm.length_mod) + 2)) * 10
         return size, size
+
+    def modify_coords_for_output(self) -> list:
+        rounded_coords = []
+        for i in self.tracer.coords:
+            rounded_coords.append(
+                (round(i[0] * self.img_output_res_mod),
+                 round(i[1] * self.img_output_res_mod))
+            )
+        return rounded_coords
 
     def create_img(self):
         img = Image.new('RGB', self.calculate_img_canvas_size(), 'white')
         print(img.size)
-        pixels = img.load()
         rounded_coords = []
+        self.calc_start = time.time()
         print('Generating image...')
-        for i in self.tracer.coords:
-            rounded_coords.append((round(i[0] * self.img_output_res_mod), round(i[1] * self.img_output_res_mod)))
+        rounded_coords = self.modify_coords_for_output()
+        print(rounded_coords)
+        print(img.size)
         print(max(rounded_coords))
-        for i in range(len(rounded_coords)):
-            img.putpixel((rounded_coords[i][0], rounded_coords[i][1]), (0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        draw.line(rounded_coords, fill=(0, 0, 0), width=1)
+        # for i in range(len(rounded_coords)):
+        #     img.putpixel((rounded_coords[i][0], rounded_coords[i][1]), (randint(0, 255), randint(0, 255), randint(0, 255)))
 
-        img.save(r"C:\users\DK\desktop\test.png")
+
+
+        print(f'Completed in {time.time() - self.calc_start} seconds')
+        print('Saving image...')
+        img.save(r"C:\users\DK\desktop\test" + str(time.time()) + ".png")
         print('Done!')
+        img.show()
 
 
 class MainGUI(tkinter.Tk):
