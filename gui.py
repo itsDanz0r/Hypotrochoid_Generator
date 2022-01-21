@@ -49,7 +49,7 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.playback_frame = 1
 
-        self.rotation_mod = 10
+        self.rotation_mod = 100
 
         self.hide_drawing = tkinter.BooleanVar()
         self.hide_drawing.set(False)
@@ -66,11 +66,11 @@ class MainCanvas(tkinter.Canvas):
         ]
 
         self.circles.append(
-            geometry.Circle(175.01, 0, self, self.circles[0])
+            geometry.Circle(160, 0, self, self.circles[0])
         )
 
         self.circles.append(
-            geometry.Circle(120., 0, self, self.circles[1])
+            geometry.Circle(130, 0, self, self.circles[1])
         )
 
 
@@ -107,7 +107,7 @@ class MainCanvas(tkinter.Canvas):
 
     def apply_mods(self):
         self.arm.theta_mod = -1
-        self.arm.length_mod = 1.19
+        self.arm.length_mod = 1.2
 
     def calculate_positions(self, i) -> None:
         """Calculates all canvas drawing object positions"""
@@ -177,23 +177,42 @@ class MainCanvas(tkinter.Canvas):
         rounded_coords = []
         for i in self.tracer.coords:
             rounded_coords.append(
-                (round(i[0] * self.img_output_res_mod),
-                 round(i[1] * self.img_output_res_mod))
+                (round(i[0] * self.img_output_res_mod) - self.width,
+                 round(i[1] * self.img_output_res_mod) - self.height)
             )
         return rounded_coords
 
+    def compute_glow(self, rounded_coords, mod: tuple) -> tuple[tuple, ...]:
+        new_coords = list(map(list, rounded_coords))
+        for i in new_coords:
+            i[0] += mod[0]
+            i[1] += mod[1]
+        return tuple(map(tuple, new_coords))
+
+
     def create_img(self):
-        img = Image.new('RGB', self.calculate_img_canvas_size(), 'white')
-        print(img.size)
-        rounded_coords = []
+
         self.calc_start = time.time()
         print('Generating image...')
         rounded_coords = self.modify_coords_for_output()
-        print(rounded_coords)
-        print(img.size)
-        print(max(rounded_coords))
+        img = Image.new('RGB', (max(rounded_coords[0]), max(rounded_coords[1])), 'blue')
         draw = ImageDraw.Draw(img)
-        draw.line(rounded_coords, fill=(0, 0, 0), width=1)
+        mod_list = (
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (-1, 0),
+            (0, -1),
+            (-1, -1),
+            (1, -1),
+            (-1, 1)
+        )
+        glow_coords_list = []
+        for i in mod_list:
+            glow_coords_list.append(self.compute_glow(rounded_coords, i))
+        for i in glow_coords_list:
+            draw.line(i, fill=(0, 255, 0), width=1)
+        draw.line(rounded_coords, fill=(255, 255, 255), width=1)
         # for i in range(len(rounded_coords)):
         #     img.putpixel((rounded_coords[i][0], rounded_coords[i][1]), (randint(0, 255), randint(0, 255), randint(0, 255)))
 
