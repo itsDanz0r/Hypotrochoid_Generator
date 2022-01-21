@@ -51,12 +51,14 @@ class MainCanvas(tkinter.Canvas):
         self.hide_drawing = tkinter.BooleanVar()
         self.hide_drawing.set(False)
 
+        self.img_output_res_mod = 20
+
         self.initial_setup()
 
     def initial_setup(self) -> None:
         """Draw all components on canvas at default settings"""
         self.circles = [
-            geometry.Circle(400, 0, self, None),
+            geometry.Circle(250, 0, self, None),
         ]
 
         self.circles.append(
@@ -64,7 +66,11 @@ class MainCanvas(tkinter.Canvas):
         )
 
         self.circles.append(
-            geometry.Circle(100, 0, self, self.circles[1])
+            geometry.Circle(100.1, 0, self, self.circles[1])
+        )
+
+        self.circles.append(
+            geometry.Circle(50.1, 0, self, self.circles[2])
         )
 
         self.inner_circle = self.circles[-1]
@@ -152,25 +158,33 @@ class MainCanvas(tkinter.Canvas):
         self.apply_mods()
 
         print('Calculating...')
-        for i in range(0, 3600000):
-            self.calculate_positions(i/1000)
+        for i in range(0, 7200000):
+            self.calculate_positions(i / 100)
 
         self.tracer.draw()
 
         self.create_img()
 
+    def calculate_img_canvas_size(self) -> tuple[float, float]:
+        size = round(((self.circles[0].radius * 2) + (self.circles[-1].radius * self.arm.length_mod) + 100) * \
+                     (self.img_output_res_mod * 1.5))
+        print(size)
+        return size, size
+
     def create_img(self):
-        img = Image.new('RGB', (24000, 24000), 'white')
+        img = Image.new('RGB', self.calculate_img_canvas_size(), 'white')
+        print(img.size)
         pixels = img.load()
         rounded_coords = []
         print('Generating image...')
         for i in self.tracer.coords:
-            rounded_coords.append((round(i[0] * 20), round(i[1] * 20)))
+            rounded_coords.append((round(i[0] * self.img_output_res_mod), round(i[1] * self.img_output_res_mod)))
+        print(max(rounded_coords))
         for i in range(len(rounded_coords)):
-            img.putpixel(rounded_coords[i][0], rounded_coords[i][1], (0, 0, 0))
+            img.putpixel((rounded_coords[i][0], rounded_coords[i][1]), (0, 0, 0))
 
         img.save(r"C:\users\DK\desktop\test.png")
-        img.show()
+        print('Done!')
 
 
 class MainGUI(tkinter.Tk):
