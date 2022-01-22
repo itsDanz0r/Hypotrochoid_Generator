@@ -49,12 +49,12 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.playback_frame = 1
 
-        self.rotation_mod = 100
+        self.rotation_mod = 50
 
         self.hide_drawing = tkinter.BooleanVar()
         self.hide_drawing.set(False)
 
-        self.img_output_res_mod = 5
+        self.img_output_res_mod = 10
 
         self.initial_setup()
         self.calc_start = time.time()
@@ -66,14 +66,12 @@ class MainCanvas(tkinter.Canvas):
         ]
 
         self.circles.append(
-            geometry.Circle(160, 0, self, self.circles[0])
+            geometry.Circle(151, 0, self, self.circles[0])
         )
 
         self.circles.append(
             geometry.Circle(130, 0, self, self.circles[1])
         )
-
-
 
         self.inner_circle = self.circles[-1]
         for i in range(len(self.circles)):
@@ -107,7 +105,7 @@ class MainCanvas(tkinter.Canvas):
 
     def apply_mods(self):
         self.arm.theta_mod = -1
-        self.arm.length_mod = 1.2
+        self.arm.length_mod = 1
 
     def calculate_positions(self, i) -> None:
         """Calculates all canvas drawing object positions"""
@@ -160,69 +158,83 @@ class MainCanvas(tkinter.Canvas):
         self.apply_mods()
         self.calc_start = time.time()
         print(f'Calculating {self.rotation_mod} rotations...')
-
         iterations = 36000 * self.rotation_mod
-        for i in range(0, iterations):
-            self.calculate_positions(i / 100)
+        for j in range(0, iterations):
+            self.calculate_positions(j / 100)
+        print(self.tracer.coords)
         print(f'Completed in {time.time() - self.calc_start} seconds')
-        self.create_img()
-        self.tracer.draw()
-        self.update()
+        self.create_img('test' + str(time.time()) + '.png')
+        self.tracer.coords = []
+
+        # CREATE MANY IMAGES
+        # for i in range(1, 999):
+        #     self.rotation_mod = 10
+        #     self.circles[1].radius = 150 + (i / 10)
+        #     self.arm.theta_mod = 1 + (i / 100)
+        #     iterations = 36000 * self.rotation_mod
+        #     for j in range(0, iterations):
+        #         self.calculate_positions(j / 100)
+        #     print(f'Completed in {time.time() - self.calc_start} seconds')
+        #     self.create_img(f'{str(i).zfill(3)}.png')
+        #     self.tracer.coords = []
 
     def calculate_img_canvas_size(self) -> tuple[float, float]:
-        size = round(((self.circles[0].radius * 2) + (self.circles[-1].radius * self.arm.length_mod) + 2)) * 10
-        return size, size
+        size = ((self.circles[0].radius * 2) + (
+                    self.arm.length_mod * self.circles[-1].radius)) * self.img_output_res_mod
+        return size + 10, size + 10
 
     def modify_coords_for_output(self) -> list:
         rounded_coords = []
+        img_size = self.calculate_img_canvas_size()[0] // 2
         for i in self.tracer.coords:
             rounded_coords.append(
-                (round(i[0] * self.img_output_res_mod) - self.width,
-                 round(i[1] * self.img_output_res_mod) - self.height)
+                (
+                    round(((i[0] - self.center[0]) * self.img_output_res_mod) + img_size),
+                    round(((i[1] - self.center[1]) * self.img_output_res_mod) + img_size)
+                )
             )
         return rounded_coords
 
-    def compute_glow(self, rounded_coords, mod: tuple) -> tuple[tuple, ...]:
-        new_coords = list(map(list, rounded_coords))
-        for i in new_coords:
-            i[0] += mod[0]
-            i[1] += mod[1]
-        return tuple(map(tuple, new_coords))
+    # def compute_glow(self, rounded_coords, mod: tuple) -> tuple[tuple, ...]:
+    #     new_coords = list(map(list, rounded_coords))
+    #     for i in new_coords:
+    #         i[0] += mod[0]
+    #         i[1] += mod[1]
+    #     return tuple(map(tuple, new_coords))
 
-
-    def create_img(self):
+    def create_img(self, file_name):
 
         self.calc_start = time.time()
         print('Generating image...')
         rounded_coords = self.modify_coords_for_output()
-        img = Image.new('RGB', (max(rounded_coords[0]), max(rounded_coords[1])), 'blue')
-        draw = ImageDraw.Draw(img)
-        mod_list = (
-            (0, 1),
-            (1, 0),
-            (1, 1),
-            (-1, 0),
-            (0, -1),
-            (-1, -1),
-            (1, -1),
-            (-1, 1)
-        )
-        glow_coords_list = []
-        for i in mod_list:
-            glow_coords_list.append(self.compute_glow(rounded_coords, i))
-        for i in glow_coords_list:
-            draw.line(i, fill=(0, 255, 0), width=1)
-        draw.line(rounded_coords, fill=(255, 255, 255), width=1)
-        # for i in range(len(rounded_coords)):
-        #     img.putpixel((rounded_coords[i][0], rounded_coords[i][1]), (randint(0, 255), randint(0, 255), randint(0, 255)))
+        img = Image.new('RGB', self.calculate_img_canvas_size(), 'blue')
+        print(self.calculate_img_canvas_size())
+        for i in rounded_coords:
+            img.putpixel((i[0], i[1]), (255, 255, 255))
 
-
+        # DRAW OUTLINE
+        # draw = ImageDraw.Draw(img)
+        # mod_list = (
+        #     (0, 1),
+        #     (1, 0),
+        #     (1, 1),
+        #     (-1, 0),
+        #     (0, -1),
+        #     (-1, -1),
+        #     (1, -1),
+        #     (-1, 1)
+        # )
+        # glow_coords_list = []
+        # for i in mod_list:
+        #     glow_coords_list.append(self.compute_glow(rounded_coords, i))
+        # for i in glow_coords_list:
+        #     draw.line(i, fill=(255, 255, 0), width=1)
 
         print(f'Completed in {time.time() - self.calc_start} seconds')
         print('Saving image...')
-        img.save(r"C:\users\DK\desktop\test" + str(time.time()) + ".png")
+        img_path = r"C:\users\DK\desktop\test"
+        img.save(img_path + '/' + file_name)
         print('Done!')
-        img.show()
 
 
 class MainGUI(tkinter.Tk):
