@@ -50,16 +50,16 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.playback_frame = 1
 
-        self.rotation_mod = 250
+        self.rotation_mod = 500
 
         self.hide_drawing = tkinter.BooleanVar()
         self.hide_drawing.set(False)
 
-        self.img_output_res_mod = 10
+        self.img_output_res_mod = 30
 
         self.draw_pixels = False
-        self.inner_colour = [255, 255, 255]
-        self.outer_colour = [0, 0, 255]
+        self.inner_colour = [0, 0, 0]
+        self.outer_colour = [0, 0, 0]
 
         self.initial_setup()
         self.calc_start = time.time()
@@ -67,15 +67,15 @@ class MainCanvas(tkinter.Canvas):
     def initial_setup(self) -> None:
         """Draw all components on canvas at default settings"""
         self.circles = [
-            geometry.Circle(300, 0, self, None),
+            geometry.Circle(300, 0, self, None, 'gray'),
         ]
 
         self.circles.append(
-            geometry.Circle(175, 0, self, self.circles[0])
+            geometry.Circle(175, 0, self, self.circles[0], 'gray')
         )
 
         self.circles.append(
-            geometry.Circle(150, 0, self, self.circles[1])
+            geometry.Circle(150, 0, self, self.circles[1], 'gray')
         )
 
         self.inner_circle = self.circles[-1]
@@ -204,39 +204,39 @@ class MainCanvas(tkinter.Canvas):
             )
         return rounded_coords
 
-    def compute_glow(self, rounded_coords, mod: tuple) -> tuple[tuple, ...]:
-        new_coords = list(map(list, rounded_coords))
-        for i in new_coords:
-            i[0] += mod[0]
-            i[1] += mod[1]
-        return tuple(map(tuple, new_coords))
+    # def compute_glow(self, rounded_coords, mod: tuple) -> tuple[tuple, ...]:
+    #     new_coords = list(map(list, rounded_coords))
+    #     for i in new_coords:
+    #         i[0] += mod[0]
+    #         i[1] += mod[1]
+    #     return tuple(map(tuple, new_coords))
 
     def create_img(self, file_name):
 
         self.calc_start = time.time()
         print('Generating image...')
         rounded_coords = self.modify_coords_for_output()
-        img = Image.new('RGB', self.calculate_img_canvas_size(), 'blue')
+        img = Image.new('RGB', self.calculate_img_canvas_size(), 'black')
         print(self.calculate_img_canvas_size())
         draw = ImageDraw.Draw(img)
 
         # DRAW OUTLINE
 
-        mod_list = (
-            (0, 1),
-            (1, 0),
-            (1, 1),
-            (-1, 0),
-            (0, -1),
-            (-1, -1),
-            (1, -1),
-            (-1, 1)
-        )
-        glow_coords_list = []
-        for i in mod_list:
-            glow_coords_list.append(self.compute_glow(rounded_coords, i))
-        for i in glow_coords_list:
-            draw.line(i, fill=(255, 255, 255), width=2)
+        # mod_list = (
+        #     (0, 1),
+        #     (1, 0),
+        #     (1, 1),
+        #     (-1, 0),
+        #     (0, -1),
+        #     (-1, -1),
+        #     (1, -1),
+        #     (-1, 1)
+        # )
+        # glow_coords_list = []
+        # for i in mod_list:
+        #     glow_coords_list.append(self.compute_glow(rounded_coords, i))
+        # for i in glow_coords_list:
+        #     draw.line(i, fill=(255, 255, 255), width=2)
         self.draw_pixels = True
         if self.draw_pixels:
             for i in rounded_coords:

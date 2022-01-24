@@ -16,7 +16,7 @@ class CanvasDrawing(ABC):
 class Circle(CanvasDrawing):
     """Defines linked list of circles on canvas"""
 
-    def __init__(self, r: float = 10, theta: float = 0, canvas=None, parent=None):
+    def __init__(self, r: float = 10, theta: float = 0, canvas=None, parent=None, colour='black'):
         self.center = (0.0, 0.0)
         self.radius = r
         self.canvas = canvas
@@ -25,6 +25,7 @@ class Circle(CanvasDrawing):
         self.theta_mod = 1
         self.calculate_position()
         self.canvas_repr = None
+        self.colour = colour
 
     def calculate_position(self) -> None:
         """Calculate current position based on current properties"""
@@ -43,7 +44,7 @@ class Circle(CanvasDrawing):
         """Draw a circle on the main canvas with specified dimensions and location"""
         x, y = self.center
         r = self.radius
-        self.canvas_repr = self.canvas.create_oval(x + r, y + r, x - r, y - r)
+        self.canvas_repr = self.canvas.create_oval(x + r, y + r, x - r, y - r, outline=self.colour)
 
     def delete(self) -> None:
         self.canvas.delete(self.canvas_repr)
