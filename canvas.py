@@ -2,7 +2,7 @@ import tkinter
 import geometry
 import time
 import math
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 
 class MainCanvas(tkinter.Canvas):
@@ -32,8 +32,10 @@ class MainCanvas(tkinter.Canvas):
         self.tracer_only_bool = tkinter.BooleanVar()
         self.tracer_only_bool.set(False)
 
+        self.add_text_overlay = True
+
         self.draw_glow = True
-        self.pixel_resolution = 5
+        self.pixel_resolution = 4
 
         self.background_colour = (50, 50, 50)
         self.rounded_coords = []
@@ -51,7 +53,7 @@ class MainCanvas(tkinter.Canvas):
         self.img_output_res_mod = 1
 
         self.draw_pixels = True
-        self.inner_colour = [500, 500, 500]
+        self.inner_colour = [255, 255, 255]
         self.outer_colour = [0, 0, 0]
 
         self.glow_colour = [255, 255, 255]
@@ -70,12 +72,16 @@ class MainCanvas(tkinter.Canvas):
         )
 
         self.circles.append(
-            geometry.Circle(120, 0, self, self.circles[1], 'gray')
+            geometry.Circle(120.1, 0, self, self.circles[1], 'gray')
         )
 
         self.circles.append(
-            geometry.Circle(100, 0, self, self.circles[2], 'gray')
+            geometry.Circle(101, 0, self, self.circles[2], 'gray')
         )
+        self.circles.append(
+            geometry.Circle(91, 0, self, self.circles[3], 'gray')
+        )
+
 
         self.inner_circle = self.circles[-1]
         for i in range(len(self.circles)):
@@ -210,13 +216,17 @@ class MainCanvas(tkinter.Canvas):
         # CREATE MANY IMAGES
 
         img_path = r"C:\users\DK\desktop\test"
-        for i in range(0, 2880):
+        for i in range(0, 28800):
             print(i)
-            self.circles[1].radius += (1/7200)
+            self.circles[1].radius += (1 / 7200)
             if self.arm.theta_mod >= 1.5:
-                self.arm.theta_mod -= (1/7200)
+                self.arm.theta_mod -= (1 / 7200)
             elif self.arm.theta_mod <= 1.5:
-                self.arm.theta_mod += (1/7200)
+                self.arm.theta_mod += (1 / 7200)
+            if self.circles[1].theta_mod >= 1.5:
+                self.circles[1].theta_mod -= (1 / 7200)
+            elif self.circles[1].theta_mod <= 1.5:
+                self.circles[1].theta_mod += (1 / 7200)
             self.create_img(f'{img_path}/{str(i).zfill(3)}.png')
 
     def calculate_img_canvas_size(self) -> tuple[float, float]:
@@ -235,7 +245,6 @@ class MainCanvas(tkinter.Canvas):
                 )
             )
         return rounded_coords
-
 
     @staticmethod
     def compute_glow(rounded_coords, mod: tuple) -> tuple[tuple, ...]:
@@ -268,11 +277,29 @@ class MainCanvas(tkinter.Canvas):
 
         print(f'Completed in {time.time() - self.calc_start} seconds')
         print('Saving image...')
+
+        if self.add_text_overlay:
+            draw.text((30, self.calculate_img_canvas_size()[1] - 110),
+                      f"Rotations per frame: {round(self.rotation_mod)}",
+                      (255, 255, 255))
+            draw.text((30, self.calculate_img_canvas_size()[1] - 120),
+                      f"Arm Length Mod: {round(self.arm.length_mod, 4)}",
+                      (255, 255, 255))
+            draw.text((30, self.calculate_img_canvas_size()[1] - 130), f"Arm Theta Mod: {round(self.arm.theta_mod, 4)}",
+                      (255, 255, 255))
+            for i in range(len(self.circles)):
+                draw.text(
+                    (30, self.calculate_img_canvas_size()[1] - 50 - (i * 10)),
+                    f"Circle {i} - Radius: {round(self.circles[i].radius, 4)}, Theta Mod: {round(self.circles[i].theta_mod, 4)}",
+                    (255, 255, 255)
+                )
+
         img.save(file_name)
         print('Done!')
         self.tracer.coords = []
-        self.playback_frame += 2
+        self.playback_frame += 1
         self.cycle_background_colour()
+
     #
     # def create_img_new(self, file_name):
     #     self.calc_start = time.time()
@@ -306,7 +333,7 @@ class MainCanvas(tkinter.Canvas):
             (pixel_coords[1] - img_size[0] / 2) ** 2 + (pixel_coords[0] - img_size[1] / 2) ** 2)
 
         # Make it on a scale from 0 to 1
-        distance_to_centre = float(distance_to_centre_in_pixels / (math.sqrt(2) * img_size[0] / 2)) + 0.4
+        distance_to_centre = float(distance_to_centre_in_pixels / (math.sqrt(2) * img_size[0] / 2))
 
         # Calculate r, g, and b values
         r = round(self.outer_colour[0] * distance_to_centre + self.inner_colour[0] * (1 - distance_to_centre))
