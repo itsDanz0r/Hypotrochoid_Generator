@@ -126,14 +126,22 @@ class MainCanvas(tkinter.Canvas):
         self.arm.calculate_position()
         self.tracer.coords.append((round(self.arm.end_coords[0], 4), round(self.arm.end_coords[1], 4)))
 
+    def input_sanity_check(self):
+        try:
+            test_frame_skip = int(self.frame_skip.get())
+        except ValueError:
+            self.frame_skip.set(0)
+
     def animate(self) -> None:
         """Test animation - pendulum rotating 360° inside the inner circle"""
+
         self.tracer.coords = []
         self.playback_stopped = False
         self.apply_mods()
 
         # i represents number of rotations to calculate
         while not self.playback_stopped:
+            self.input_sanity_check()
             self.playback_frame += 1
 
             # Division here determines frame rate if program running full speed

@@ -41,7 +41,7 @@ class SidebarFrame(tkinter.Frame):
             text='Skip Frames:',
             textvariable=self.parent.main_canvas.frame_skip,
             from_=0,
-            to=50
+            to=50,
         )
 
         self.controls = [
