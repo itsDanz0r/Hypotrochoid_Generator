@@ -4,6 +4,14 @@ import time
 import math
 from PIL import Image, ImageDraw, ImageFont
 
+RED = [255, 0, 0]
+GREEN = [0, 255, 0]
+BLUE = [0, 0, 255]
+YELLOW = [255, 255, 0]
+CYAN = [0, 255, 255]
+WHITE = [255, 255, 255]
+BLACK = [0, 0, 0]
+PURPLE = [255, 0, 255]
 
 class MainCanvas(tkinter.Canvas):
     """Defines custom canvas and animation class"""
@@ -35,9 +43,9 @@ class MainCanvas(tkinter.Canvas):
         self.add_text_overlay = True
 
         self.draw_glow = True
-        self.pixel_resolution = 4
+        self.pixel_resolution = 10
 
-        self.background_colour = (50, 50, 50)
+        self.background_colour = (0, 0, 0)
         self.rounded_coords = []
 
         self.circles = []
@@ -50,11 +58,11 @@ class MainCanvas(tkinter.Canvas):
         self.rotation_mod = 50
         self.total_rotations = tkinter.IntVar()
         self.total_rotations.set(0)
-        self.img_output_res_mod = 1
+        self.img_output_res_mod = 2
 
         self.draw_pixels = True
-        self.inner_colour = [255, 255, 255]
-        self.outer_colour = [0, 0, 0]
+        self.inner_colour = [0, 500, 500]
+        self.outer_colour = [255, 255, 255]
 
         self.glow_colour = [255, 255, 255]
 
@@ -72,15 +80,9 @@ class MainCanvas(tkinter.Canvas):
         )
 
         self.circles.append(
-            geometry.Circle(120.1, 0, self, self.circles[1], 'gray')
+            geometry.Circle(120, 0, self, self.circles[1], 'gray')
         )
 
-        self.circles.append(
-            geometry.Circle(101, 0, self, self.circles[2], 'gray')
-        )
-        self.circles.append(
-            geometry.Circle(91, 0, self, self.circles[3], 'gray')
-        )
 
 
         self.inner_circle = self.circles[-1]
@@ -218,15 +220,15 @@ class MainCanvas(tkinter.Canvas):
         img_path = r"C:\users\DK\desktop\test"
         for i in range(0, 28800):
             print(i)
-            self.circles[1].radius += (1 / 7200)
+            self.circles[1].radius += (1 / 12000)
             if self.arm.theta_mod >= 1.5:
-                self.arm.theta_mod -= (1 / 7200)
+                self.arm.theta_mod -= (1 / 12000)
             elif self.arm.theta_mod <= 1.5:
-                self.arm.theta_mod += (1 / 7200)
+                self.arm.theta_mod += (1 / 12000)
             if self.circles[1].theta_mod >= 1.5:
-                self.circles[1].theta_mod -= (1 / 7200)
+                self.circles[1].theta_mod -= (1 / 12000)
             elif self.circles[1].theta_mod <= 1.5:
-                self.circles[1].theta_mod += (1 / 7200)
+                self.circles[1].theta_mod += (1 / 12000)
             self.create_img(f'{img_path}/{str(i).zfill(3)}.png')
 
     def calculate_img_canvas_size(self) -> tuple[float, float]:
@@ -268,7 +270,7 @@ class MainCanvas(tkinter.Canvas):
 
         print(self.calculate_img_canvas_size())
         draw = ImageDraw.Draw(img)
-        self.draw_pixels = True
+        self.draw_pixels = False
         if self.draw_pixels:
             for i in self.rounded_coords:
                 img.putpixel((i[0], i[1]), self.calculate_pixel_gradient(i))
@@ -297,31 +299,10 @@ class MainCanvas(tkinter.Canvas):
         img.save(file_name)
         print('Done!')
         self.tracer.coords = []
-        self.playback_frame += 1
+        self.playback_frame += 10
+        if self.playback_frame >= 1000:
+            self.playback_frame = 1
         self.cycle_background_colour()
-
-    #
-    # def create_img_new(self, file_name):
-    #     self.calc_start = time.time()
-    #     print('Generating image...')
-    #     self.rounded_coords = self.modify_coords_for_output()
-    #     img = Image.new('RGB', self.calculate_img_canvas_size(), 'black')
-    #     print(self.calculate_img_canvas_size())
-    #     draw = ImageDraw.Draw(img)
-    #     iterations = 360 * self.rotation_mod * self.pixel_resolution
-    #     for j in range(0, iterations):
-    #         self.tracer.coords = []
-    #
-    #         self.calculate_positions(j)
-    #         self.tracer.coords = self.modify_single_coord_for_output()
-    #         img.putpixel((self.tracer.coords[0][0], self.tracer.coords[0][1]),
-    #         self.calculate_pixel_gradient((self.tracer.coords[0][0], self.tracer.coords[0][1])))
-    #     print(f'Completed in {time.time() - self.calc_start} seconds')
-    #     print(f'Completed in {time.time() - self.calc_start} seconds')
-    #     print('Saving image...')
-    #
-    #     img.save(file_name)
-    #     print('Done!')
 
     def calculate_pixel_gradient(self, pixel_coords):
         if self.outer_colour == self.inner_colour:
@@ -333,7 +314,7 @@ class MainCanvas(tkinter.Canvas):
             (pixel_coords[1] - img_size[0] / 2) ** 2 + (pixel_coords[0] - img_size[1] / 2) ** 2)
 
         # Make it on a scale from 0 to 1
-        distance_to_centre = float(distance_to_centre_in_pixels / (math.sqrt(2) * img_size[0] / 2))
+        distance_to_centre = float(distance_to_centre_in_pixels / (math.sqrt(2) * img_size[0] / 2)) + 0.3
 
         # Calculate r, g, and b values
         r = round(self.outer_colour[0] * distance_to_centre + self.inner_colour[0] * (1 - distance_to_centre))
@@ -343,15 +324,15 @@ class MainCanvas(tkinter.Canvas):
 
     def cycle_background_colour(self):
         i = self.playback_frame
-        if i >= 750:
-            i = i - (750 * (750 // i))
-        if 0 <= i <= 149:
-            self.background_colour = (50 + i, 50, 50)
-        if 150 <= i <= 299:
-            self.background_colour = (200, 50 + i - 150, 50)
-        if 300 <= i <= 449:
-            self.background_colour = (200, 200 - i - 300, 50 + i - 300)
-        if 450 <= i <= 599:
-            self.background_colour = (200 - i - 450, 50, 200)
-        if 600 <= i <= 749:
-            self.background_colour = (50, 50, 200 - i - 600)
+        colour_increment = 200
+        if 0 <= i <= colour_increment - 1:
+            self.background_colour = (round(0 + i), 0, 0)
+        if colour_increment <= i <= (colour_increment * 2) - 1:
+            self.background_colour = (200, round(50 + i) - colour_increment, 0)
+        if (colour_increment * 2) <= i <= (colour_increment * 3) - 1:
+            self.background_colour = (200, 200 - i - (colour_increment * 2), round(0 + i) - 400)
+        if (colour_increment * 3) <= i <= (colour_increment * 4) - 1:
+            self.background_colour = (round(200 - i - (colour_increment * 3)), 0, 200)
+        if (colour_increment * 4) <= i <= (colour_increment * 5) - 1:
+            self.background_colour = (0, 0, round(200 - i - (colour_increment * 4)))
+        print(self.background_colour)
