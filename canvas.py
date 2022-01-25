@@ -25,9 +25,12 @@ class MainCanvas(tkinter.Canvas):
 
         self.parent = parent
         self.fps = 60
-        self.frame_skip = 20
+        self.frame_skip = tkinter.StringVar()
+        self.frame_skip.set(0)
 
         self.tracer = None
+        self.tracer_only_bool = tkinter.BooleanVar()
+        self.tracer_only_bool.set(False)
 
         self.circles = []
         self.inner_circle = None
@@ -37,9 +40,6 @@ class MainCanvas(tkinter.Canvas):
         self.playback_frame = 1
 
         self.rotation_mod = 500
-
-        self.hide_drawing = tkinter.BooleanVar()
-        self.hide_drawing.set(False)
 
         self.img_output_res_mod = 30
 
@@ -99,6 +99,23 @@ class MainCanvas(tkinter.Canvas):
         self.arm.length_mod = 1
         self.circles[1].theta_mod = -1
 
+    def toggle_tracer_only(self):
+        print(self.tracer_only_bool.get())
+        if self.tracer_only_bool.get():
+            print(self.tracer_only_bool.get())
+            self.delete(self.arm.canvas_repr)
+            for circle in self.circles:
+                self.delete(circle.canvas_repr)
+            self.update()
+        else:
+            print(self.tracer_only_bool.get())
+            for circle in self.circles:
+                circle.calculate_position()
+                circle.draw()
+            self.arm.calculate_position()
+            self.arm.draw()
+            self.update()
+
     def calculate_positions(self, i) -> None:
         """Calculates all canvas drawing object positions"""
         for circle in self.circles:
@@ -121,7 +138,6 @@ class MainCanvas(tkinter.Canvas):
 
             # Division here determines frame rate if program running full speed
 
-
             # Clear current positions
             self.delete("all")
 
@@ -135,23 +151,25 @@ class MainCanvas(tkinter.Canvas):
 
             # Only begin drawing after 2 frames to allow minimum coordinates in list
             # Check frame skip setting and only draw and update on non skipped frames
-            if self.playback_frame > 2 and self.playback_frame % self.frame_skip == 0:
+            if self.playback_frame > 2 and self.playback_frame % (int(self.frame_skip.get()) + 1) == 0:
                 self.tracer.draw()
-                for circle in self.circles:
-                    circle.draw()
-                self.arm.draw()
+                if not self.tracer_only_bool.get():
+                    for circle in self.circles:
+                        circle.draw()
+                    self.arm.draw()
                 time.sleep(1 / self.fps)
                 self.update()
 
             if len(self.tracer.coords) > 2 and self.tracer.coords[0] == self.tracer.coords[-1]:
                 self.playback_stopped = True
                 self.tracer.draw()
-                for circle in self.circles:
-                    circle.draw()
-                self.arm.draw()
+                self.tracer_only_bool.get()
+                if not self.tracer_only_bool.get():
+                    print(self.tracer_only_bool.get())
+                    for circle in self.circles:
+                        circle.draw()
+                    self.arm.draw()
                 self.update()
-
-
 
     def draw_many(self) -> None:
         """Calculates and draws a specified number of frames in one step"""

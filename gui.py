@@ -26,11 +26,31 @@ class SidebarFrame(tkinter.Frame):
             text='DRAW MANY',
             command=self.parent.main_canvas.draw_many
         )
+        self.tracer_only_checkbox = tkinter.Checkbutton(
+            text='Tracer Only',
+            variable=self.parent.main_canvas.tracer_only_bool,
+            command=self.parent.main_canvas.toggle_tracer_only,
+            onvalue=True,
+            offvalue=False
+        )
+        self.frame_skip_label = tkinter.Label(
+            text="Skip frames:"
+        )
+
+        self.frame_skip_spinbox = tkinter.Spinbox(
+            text='Skip Frames:',
+            textvariable=self.parent.main_canvas.frame_skip,
+            from_=0,
+            to=50
+        )
 
         self.controls = [
             self.play_button,
             self.stop_button,
-            self.draw_many_button
+            self.draw_many_button,
+            self.tracer_only_checkbox,
+            self.frame_skip_label,
+            self.frame_skip_spinbox,
         ]
 
         i = 100
@@ -39,8 +59,6 @@ class SidebarFrame(tkinter.Frame):
                 x=40, y=i
             )
             i += 30
-
-
 
     def play_button(self) -> None:
         """Define behaviour of play button"""
@@ -94,10 +112,3 @@ class MainGUI(tkinter.Tk):
         self.main_canvas = self.canvas_frame.canvas
         self.sidebar_frame = SidebarFrame(self)
         self.sidebar_frame.place(x=0, y=0)
-
-
-
-
-
-
-
