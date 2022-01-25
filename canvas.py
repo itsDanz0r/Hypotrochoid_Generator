@@ -44,14 +44,14 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.playback_frame = 1
 
-        self.rotation_mod = 25
+        self.rotation_mod = 50
         self.total_rotations = tkinter.IntVar()
         self.total_rotations.set(0)
-        self.img_output_res_mod = 2
+        self.img_output_res_mod = 1
 
         self.draw_pixels = True
         self.inner_colour = [255, 255, 255]
-        self.outer_colour = [0, 255, 255]
+        self.outer_colour = [0, 0, 0]
 
         self.glow_colour = [255, 255, 255]
 
@@ -69,7 +69,11 @@ class MainCanvas(tkinter.Canvas):
         )
 
         self.circles.append(
-            geometry.Circle(120.02315, 0, self, self.circles[1], 'gray')
+            geometry.Circle(120, 0, self, self.circles[1], 'gray')
+        )
+
+        self.circles.append(
+            geometry.Circle(100, 0, self, self.circles[2], 'gray')
         )
 
 
@@ -78,7 +82,8 @@ class MainCanvas(tkinter.Canvas):
             if i % 2 != 0:
                 self.circles[i].theta_mod = self.circles[i].theta_mod * -1
 
-        self.circles[1].theta_mod = self.circles[0].theta_mod * 2.7
+        self.circles[1].theta_mod = self.circles[1].theta_mod * 2.7
+        self.circles[2].theta_mod = self.circles[2].theta_mod * 1
         self.arm = geometry.Arm(self.circles[-1], self)
         # self.apply_mods()
         self.arm.theta_mod = -1
@@ -208,11 +213,11 @@ class MainCanvas(tkinter.Canvas):
         img_path = r"C:\users\DK\desktop\test"
         for i in range(0, 2880):
             print(i)
-            self.circles[1].radius += (i/1440000)
+            self.circles[1].radius += (1/7200)
             if self.arm.theta_mod >= 1.5:
-                self.arm.theta_mod -= (i/14400)
+                self.arm.theta_mod -= (1/7200)
             elif self.arm.theta_mod <= 1.5:
-                self.arm.theta_mod += (i/14400)
+                self.arm.theta_mod += (1/7200)
             self.create_img(f'{img_path}/{str(i).zfill(3)}.png')
 
     def calculate_img_canvas_size(self) -> tuple[float, float]:
@@ -255,15 +260,19 @@ class MainCanvas(tkinter.Canvas):
     def create_img(self, file_name):
         self.calc_start = time.time()
         print('Generating image...')
-        iterations = 360 * self.rotation_mod
+        iterations = 360 * self.rotation_mod * self.pixel_resolution
         for j in range(0, iterations):
-            self.calculate_positions(j)
+            self.calculate_positions(j / self.pixel_resolution)
         self.rounded_coords = self.modify_coords_for_output()
         img = Image.new('RGB', self.calculate_img_canvas_size(), 'black')
         print(self.calculate_img_canvas_size())
         draw = ImageDraw.Draw(img)
-
-        draw.line(self.rounded_coords, fill=(255, 255, 255), width=2)
+        self.draw_pixels = True
+        if self.draw_pixels:
+            for i in self.rounded_coords:
+                img.putpixel((i[0], i[1]), self.calculate_pixel_gradient(i))
+        else:
+            draw.line(self.rounded_coords, fill=(255, 255, 255), width=1)
 
         print(f'Completed in {time.time() - self.calc_start} seconds')
         print('Saving image...')
@@ -294,7 +303,7 @@ class MainCanvas(tkinter.Canvas):
 
     def calculate_pixel_gradient(self, pixel_coords):
         if self.outer_colour == self.inner_colour:
-            return self.outer_colour
+            return self.outer_colour[0], self.outer_colour[1], self.outer_colour[2]
         img_size = self.calculate_img_canvas_size()
 
         # Find the distance to the center
