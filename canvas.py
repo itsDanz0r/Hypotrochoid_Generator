@@ -57,11 +57,11 @@ class MainCanvas(tkinter.Canvas):
         ]
 
         self.circles.append(
-            geometry.Circle(175, 0, self, self.circles[0], 'gray')
+            geometry.Circle(150, 0, self, self.circles[0], 'gray')
         )
 
         self.circles.append(
-            geometry.Circle(150, 0, self, self.circles[1], 'gray')
+            geometry.Circle(100, 0, self, self.circles[1], 'gray')
         )
 
         self.inner_circle = self.circles[-1]
@@ -142,6 +142,16 @@ class MainCanvas(tkinter.Canvas):
                 self.arm.draw()
                 time.sleep(1 / self.fps)
                 self.update()
+
+            if len(self.tracer.coords) > 2 and self.tracer.coords[0] == self.tracer.coords[-1]:
+                self.playback_stopped = True
+                self.tracer.draw()
+                for circle in self.circles:
+                    circle.draw()
+                self.arm.draw()
+                self.update()
+
+
 
     def draw_many(self) -> None:
         """Calculates and draws a specified number of frames in one step"""
