@@ -32,6 +32,9 @@ class MainCanvas(tkinter.Canvas):
         self.tracer_only_bool = tkinter.BooleanVar()
         self.tracer_only_bool.set(False)
 
+        self.draw_glow = True
+        self.pixel_resolution = 5
+
         self.rounded_coords = []
 
         self.circles = []
@@ -41,14 +44,16 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.playback_frame = 1
 
-        self.rotation_mod = 248
+        self.rotation_mod = 25
         self.total_rotations = tkinter.IntVar()
         self.total_rotations.set(0)
-        self.img_output_res_mod = 30
+        self.img_output_res_mod = 2
 
-        self.draw_pixels = False
+        self.draw_pixels = True
         self.inner_colour = [255, 255, 255]
-        self.outer_colour = [255, 0, 0]
+        self.outer_colour = [0, 255, 255]
+
+        self.glow_colour = [255, 255, 255]
 
         self.initial_setup()
         self.calc_start = time.time()
@@ -56,27 +61,27 @@ class MainCanvas(tkinter.Canvas):
     def initial_setup(self) -> None:
         """Draw all components on canvas at default settings"""
         self.circles = [
-            geometry.Circle(400, 0, self, None, 'gray'),
+            geometry.Circle(371, 0, self, None, 'gray'),
         ]
 
         self.circles.append(
-            geometry.Circle(310, 0, self, self.circles[0], 'gray')
+            geometry.Circle(300.02315, 0, self, self.circles[0], 'gray')
         )
 
         self.circles.append(
-            geometry.Circle(200.1, 0, self, self.circles[1], 'gray')
+            geometry.Circle(120.02315, 0, self, self.circles[1], 'gray')
         )
-        self.circles.append(
-            geometry.Circle(133.1, 0, self, self.circles[2], 'gray')
-        )
+
 
         self.inner_circle = self.circles[-1]
         for i in range(len(self.circles)):
             if i % 2 != 0:
-                self.circles[i].theta_mod = -1
+                self.circles[i].theta_mod = self.circles[i].theta_mod * -1
 
+        self.circles[1].theta_mod = self.circles[0].theta_mod * 2.7
         self.arm = geometry.Arm(self.circles[-1], self)
-        self.apply_mods()
+        # self.apply_mods()
+        self.arm.theta_mod = -1
         self.arm.calculate_position()
 
         for circle in self.circles:
@@ -101,8 +106,9 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
 
     def apply_mods(self):
-        self.arm.theta_mod = 1
-        self.arm.length_mod = 1
+        # self.arm.theta_mod = 1
+        self.arm.length_mod = 0.6
+
 
     def toggle_tracer_only(self):
         print(self.tracer_only_bool.get())
@@ -142,7 +148,7 @@ class MainCanvas(tkinter.Canvas):
 
         self.tracer.coords = []
         self.playback_stopped = False
-        self.apply_mods()
+        # self.apply_mods()
 
         # i represents number of rotations to calculate
         while not self.playback_stopped:
@@ -192,29 +198,22 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.tracer.coords = []
         self.delete('all')
-        self.apply_mods()
+        # self.apply_mods()
         self.calc_start = time.time()
-        print(f'Calculating {self.rotation_mod} rotations...')
-        iterations = 36000 * self.rotation_mod
-        for j in range(0, iterations):
-            self.calculate_positions(j / 100)
-        print(f'Completed in {time.time() - self.calc_start} seconds')
-        self.create_img('test' + str(time.time()) + '.png')
-        print('')
-        self.tracer.coords = self.tracer.coords[0:100000]
-        self.tracer.draw()
+        self.create_many_images()
 
+    def create_many_images(self):
         # CREATE MANY IMAGES
-        # for i in range(1, 999):
-        #     self.rotation_mod = 10
-        #     self.circles[1].radius = 150 + (i / 10)
-        #     self.arm.theta_mod = 1 + (i / 100)
-        #     iterations = 36000 * self.rotation_mod
-        #     for j in range(0, iterations):
-        #         self.calculate_positions(j / 100)
-        #     print(f'Completed in {time.time() - self.calc_start} seconds')
-        #     self.create_img(f'{str(i).zfill(3)}.png')
-        #     self.tracer.coords = []
+
+        img_path = r"C:\users\DK\desktop\test"
+        for i in range(0, 2880):
+            print(i)
+            self.circles[1].radius += (i/1440000)
+            if self.arm.theta_mod >= 1.5:
+                self.arm.theta_mod -= (i/14400)
+            elif self.arm.theta_mod <= 1.5:
+                self.arm.theta_mod += (i/14400)
+            self.create_img(f'{img_path}/{str(i).zfill(3)}.png')
 
     def calculate_img_canvas_size(self) -> tuple[float, float]:
         size = round(((self.circles[0].radius * 2) + (
@@ -233,53 +232,69 @@ class MainCanvas(tkinter.Canvas):
             )
         return rounded_coords
 
-    # def compute_glow(self, rounded_coords, mod: tuple) -> tuple[tuple, ...]:
-    #     new_coords = list(map(list, rounded_coords))
-    #     for i in new_coords:
-    #         i[0] += mod[0]
-    #         i[1] += mod[1]
-    #     return tuple(map(tuple, new_coords))
+    def modify_single_coord_for_output(self) -> list:
+        rounded_coords = []
+        img_size = self.calculate_img_canvas_size()[0] // 2
+        for i in self.tracer.coords:
+            rounded_coords.append(
+                (
+                    round(((i[0] - self.center[0]) * self.img_output_res_mod) + img_size),
+                    round(((i[1] - self.center[1]) * self.img_output_res_mod) + img_size)
+                )
+            )
+        return rounded_coords
+
+    @staticmethod
+    def compute_glow(rounded_coords, mod: tuple) -> tuple[tuple, ...]:
+        new_coords = list(map(list, rounded_coords))
+        for i in new_coords:
+            i[0] += mod[0]
+            i[1] += mod[1]
+        return tuple(map(tuple, new_coords))
 
     def create_img(self, file_name):
-
         self.calc_start = time.time()
         print('Generating image...')
+        iterations = 360 * self.rotation_mod
+        for j in range(0, iterations):
+            self.calculate_positions(j)
         self.rounded_coords = self.modify_coords_for_output()
         img = Image.new('RGB', self.calculate_img_canvas_size(), 'black')
         print(self.calculate_img_canvas_size())
         draw = ImageDraw.Draw(img)
 
-        # DRAW OUTLINE
-
-        # mod_list = (
-        #     (0, 1),
-        #     (1, 0),
-        #     (1, 1),
-        #     (-1, 0),
-        #     (0, -1),
-        #     (-1, -1),
-        #     (1, -1),
-        #     (-1, 1)
-        # )
-        # glow_coords_list = []
-        # for i in mod_list:
-        #     glow_coords_list.append(self.compute_glow(self.rounded_coords, i))
-        # for i in glow_coords_list:
-        #     draw.line(i, fill=(255, 255, 255), width=2)
-        self.draw_pixels = True
-        if self.draw_pixels:
-            for i in self.rounded_coords:
-                img.putpixel((i[0], i[1]), self.calculate_pixel_gradient(i))
-        else:
-            draw.line(self.rounded_coords, fill=(255, 255, 255), width=1)
+        draw.line(self.rounded_coords, fill=(255, 255, 255), width=2)
 
         print(f'Completed in {time.time() - self.calc_start} seconds')
         print('Saving image...')
-        img_path = r"C:\users\DK\desktop\test"
-        img.save(img_path + '/' + file_name)
+        img.save(file_name)
         print('Done!')
+        self.tracer.coords = []
+    #
+    # def create_img_new(self, file_name):
+    #     self.calc_start = time.time()
+    #     print('Generating image...')
+    #     self.rounded_coords = self.modify_coords_for_output()
+    #     img = Image.new('RGB', self.calculate_img_canvas_size(), 'black')
+    #     print(self.calculate_img_canvas_size())
+    #     draw = ImageDraw.Draw(img)
+    #     iterations = 360 * self.rotation_mod * self.pixel_resolution
+    #     for j in range(0, iterations):
+    #         self.tracer.coords = []
+    #
+    #         self.calculate_positions(j)
+    #         self.tracer.coords = self.modify_single_coord_for_output()
+    #         img.putpixel((self.tracer.coords[0][0], self.tracer.coords[0][1]), self.calculate_pixel_gradient((self.tracer.coords[0][0], self.tracer.coords[0][1])))
+    #     print(f'Completed in {time.time() - self.calc_start} seconds')
+    #     print(f'Completed in {time.time() - self.calc_start} seconds')
+    #     print('Saving image...')
+    #
+    #     img.save(file_name)
+    #     print('Done!')
 
     def calculate_pixel_gradient(self, pixel_coords):
+        if self.outer_colour == self.inner_colour:
+            return self.outer_colour
         img_size = self.calculate_img_canvas_size()
 
         # Find the distance to the center
