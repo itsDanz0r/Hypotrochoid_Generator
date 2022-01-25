@@ -19,10 +19,12 @@ class SidebarFrame(tkinter.Frame):
 
         self.stop_button = tkinter.Button(
             text='STOP',
+            command=self.parent.main_canvas.stop_playback
         )
 
         self.draw_many_button = tkinter.Button(
             text='DRAW MANY',
+            command=self.parent.main_canvas.draw_many
         )
 
         self.controls = [

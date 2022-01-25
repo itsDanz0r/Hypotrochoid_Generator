@@ -25,6 +25,7 @@ class MainCanvas(tkinter.Canvas):
 
         self.parent = parent
         self.fps = 60
+        self.frame_skip = 20
 
         self.tracer = None
 
@@ -119,16 +120,13 @@ class MainCanvas(tkinter.Canvas):
             self.playback_frame += 1
 
             # Division here determines frame rate if program running full speed
-            time.sleep(1 / self.fps)
+
 
             # Clear current positions
             self.delete("all")
 
             # Draw circles
             self.calculate_positions(self.playback_frame)
-            for circle in self.circles:
-                circle.draw()
-            self.arm.draw()
 
             # Lower Z-index of all circles and pendulum so trace is more visible
             self.tag_lower(self.arm)
@@ -136,10 +134,14 @@ class MainCanvas(tkinter.Canvas):
                 self.tag_lower(circle)
 
             # Only begin drawing after 2 frames to allow minimum coordinates in list
-            if self.playback_frame > 2:
+            # Check frame skip setting and only draw and update on non skipped frames
+            if self.playback_frame > 2 and self.playback_frame % self.frame_skip == 0:
                 self.tracer.draw()
-
-            self.update()
+                for circle in self.circles:
+                    circle.draw()
+                self.arm.draw()
+                time.sleep(1 / self.fps)
+                self.update()
 
     def draw_many(self) -> None:
         """Calculates and draws a specified number of frames in one step"""
