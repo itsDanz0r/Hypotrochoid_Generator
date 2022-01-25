@@ -32,6 +32,8 @@ class MainCanvas(tkinter.Canvas):
         self.tracer_only_bool = tkinter.BooleanVar()
         self.tracer_only_bool.set(False)
 
+        self.rounded_coords = []
+
         self.circles = []
         self.inner_circle = None
         self.arm = None
@@ -39,13 +41,14 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.playback_frame = 1
 
-        self.rotation_mod = 500
-
+        self.rotation_mod = 248
+        self.total_rotations = tkinter.IntVar()
+        self.total_rotations.set(0)
         self.img_output_res_mod = 30
 
         self.draw_pixels = False
-        self.inner_colour = [0, 0, 0]
-        self.outer_colour = [0, 0, 0]
+        self.inner_colour = [255, 255, 255]
+        self.outer_colour = [255, 0, 0]
 
         self.initial_setup()
         self.calc_start = time.time()
@@ -53,15 +56,18 @@ class MainCanvas(tkinter.Canvas):
     def initial_setup(self) -> None:
         """Draw all components on canvas at default settings"""
         self.circles = [
-            geometry.Circle(300, 0, self, None, 'gray'),
+            geometry.Circle(400, 0, self, None, 'gray'),
         ]
 
         self.circles.append(
-            geometry.Circle(150, 0, self, self.circles[0], 'gray')
+            geometry.Circle(310, 0, self, self.circles[0], 'gray')
         )
 
         self.circles.append(
-            geometry.Circle(100, 0, self, self.circles[1], 'gray')
+            geometry.Circle(200.1, 0, self, self.circles[1], 'gray')
+        )
+        self.circles.append(
+            geometry.Circle(133.1, 0, self, self.circles[2], 'gray')
         )
 
         self.inner_circle = self.circles[-1]
@@ -95,9 +101,8 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
 
     def apply_mods(self):
-        self.arm.theta_mod = -1
+        self.arm.theta_mod = 1
         self.arm.length_mod = 1
-        self.circles[1].theta_mod = -1
 
     def toggle_tracer_only(self):
         print(self.tracer_only_bool.get())
@@ -151,6 +156,9 @@ class MainCanvas(tkinter.Canvas):
 
             # Draw circles
             self.calculate_positions(self.playback_frame)
+            if (self.playback_frame + 1) % 360 == 0:
+                self.total_rotations.set((self.playback_frame - 1) // 360)
+                self.parent.parent.sidebar_frame.update_rotations()
 
             # Lower Z-index of all circles and pendulum so trace is more visible
             self.tag_lower(self.arm)
@@ -236,7 +244,7 @@ class MainCanvas(tkinter.Canvas):
 
         self.calc_start = time.time()
         print('Generating image...')
-        rounded_coords = self.modify_coords_for_output()
+        self.rounded_coords = self.modify_coords_for_output()
         img = Image.new('RGB', self.calculate_img_canvas_size(), 'black')
         print(self.calculate_img_canvas_size())
         draw = ImageDraw.Draw(img)
@@ -255,15 +263,15 @@ class MainCanvas(tkinter.Canvas):
         # )
         # glow_coords_list = []
         # for i in mod_list:
-        #     glow_coords_list.append(self.compute_glow(rounded_coords, i))
+        #     glow_coords_list.append(self.compute_glow(self.rounded_coords, i))
         # for i in glow_coords_list:
         #     draw.line(i, fill=(255, 255, 255), width=2)
         self.draw_pixels = True
         if self.draw_pixels:
-            for i in rounded_coords:
+            for i in self.rounded_coords:
                 img.putpixel((i[0], i[1]), self.calculate_pixel_gradient(i))
         else:
-            draw.line(rounded_coords, fill=(255, 255, 255), width=1)
+            draw.line(self.rounded_coords, fill=(255, 255, 255), width=1)
 
         print(f'Completed in {time.time() - self.calc_start} seconds')
         print('Saving image...')
@@ -275,11 +283,11 @@ class MainCanvas(tkinter.Canvas):
         img_size = self.calculate_img_canvas_size()
 
         # Find the distance to the center
-        distance_to_centre = math.sqrt(
-            (pixel_coords[0] - img_size[0] / 2) ** 2 + (pixel_coords[1] - img_size[1] / 2) ** 2)
+        distance_to_centre_in_pixels = math.sqrt(
+            (pixel_coords[1] - img_size[0] / 2) ** 2 + (pixel_coords[0] - img_size[1] / 2) ** 2)
 
         # Make it on a scale from 0 to 1
-        distance_to_centre = float(distance_to_centre) / (math.sqrt(2) * pixel_coords[0] / 2)
+        distance_to_centre = float(distance_to_centre_in_pixels / (math.sqrt(2) * img_size[0] / 2))
 
         # Calculate r, g, and b values
         r = round(self.outer_colour[0] * distance_to_centre + self.inner_colour[0] * (1 - distance_to_centre))

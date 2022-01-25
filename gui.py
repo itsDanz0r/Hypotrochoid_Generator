@@ -43,6 +43,19 @@ class SidebarFrame(tkinter.Frame):
             from_=0,
             to=50,
         )
+        self.outer_circle_label = tkinter.Label(
+            text="Outer circle radius:"
+        )
+
+        self.outer_circle_radius = tkinter.Spinbox(
+            text='Skip Frames:',
+            textvariable=self.parent.main_canvas.frame_skip,
+            from_=0,
+            to=50,
+        )
+        self.total_rotations_label = tkinter.Label(
+            text=f'Total rotations: {self.parent.main_canvas.total_rotations.get()}'
+        )
 
         self.controls = [
             self.play_button,
@@ -51,6 +64,7 @@ class SidebarFrame(tkinter.Frame):
             self.tracer_only_checkbox,
             self.frame_skip_label,
             self.frame_skip_spinbox,
+            self.total_rotations_label,
         ]
 
         i = 100
@@ -59,6 +73,11 @@ class SidebarFrame(tkinter.Frame):
                 x=40, y=i
             )
             i += 30
+
+    def update_rotations(self):
+        self.total_rotations_label.configure(
+            text=f'Total rotations: {self.parent.main_canvas.total_rotations.get()}'
+        )
 
     def play_button(self) -> None:
         """Define behaviour of play button"""

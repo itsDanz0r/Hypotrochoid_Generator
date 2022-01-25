@@ -35,7 +35,7 @@ class Circle(CanvasDrawing):
         else:
             self.center = polar_to_cartesian_with_offset(
                 r=self.parent.radius - self.radius,
-                theta=self.theta * self.theta_mod,
+                theta=(self.radius / self.parent.radius) * self.theta * self.theta_mod,
                 x_offset=self.parent.center[0],
                 y_offset=self.parent.center[1]
             )
