@@ -299,7 +299,7 @@ class MainCanvas(tkinter.Canvas):
                       (255, 255, 255))
             for i in range(len(self.circles)):
                 draw.text(
-                    (30, sself.height - 70 - (i * 10)),
+                    (30, self.height - 70 - (i * 10)),
                     f"Circle {i} - Radius: {round(self.circles[i].radius, 4)}, "
                     f"Theta Mod: {round(self.circles[i].theta_mod, 4)}",
                     (255, 255, 255)
