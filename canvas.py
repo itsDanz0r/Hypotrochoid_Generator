@@ -2,7 +2,7 @@ import tkinter
 import geometry
 import time
 import math
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 RED = [255, 0, 0]
 GREEN = [0, 255, 0]
@@ -43,7 +43,7 @@ class MainCanvas(tkinter.Canvas):
         self.add_text_overlay = True
 
         self.draw_glow = True
-        self.pixel_resolution = 20
+        self.pixel_resolution = 30
 
         self.background_colour = (0, 0, 0)
         self.rounded_coords = []
@@ -55,14 +55,16 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.playback_frame = 0
 
-        self.rotation_mod = 30
+        self.rotation_mod = 20
         self.total_rotations = tkinter.IntVar()
         self.total_rotations.set(0)
-        self.img_output_res_mod = 5
+        self.img_output_res_mod = 3
 
         self.draw_pixels = True
         self.inner_colour = [0, 0, 0]
         self.outer_colour = [240, 240, 240]
+
+        self.font = ImageFont.truetype("cour.ttf", 28)
 
         self.glow_colour = [255, 255, 255]
 
@@ -72,7 +74,7 @@ class MainCanvas(tkinter.Canvas):
     def initial_setup(self) -> None:
         """Draw all components on canvas at default settings"""
         self.circles = [
-            geometry.Circle(820, 0, self, None, 'gray'),
+            geometry.Circle(920, 0, self, None, 'gray'),
         ]
 
         self.circles.append(
@@ -89,10 +91,10 @@ class MainCanvas(tkinter.Canvas):
                 self.circles[i].theta_mod = self.circles[i].theta_mod * -1
 
         self.circles[1].theta_mod = self.circles[1].theta_mod * 2.3
-        self.circles[2].theta_mod = self.circles[2].theta_mod * 1.6
+        self.circles[2].theta_mod = self.circles[2].theta_mod * 1.21
         self.arm = geometry.Arm(self.circles[-1], self)
         # self.apply_mods()
-        self.arm.theta_mod = -1
+        self.arm.theta_mod = 1
         self.arm.calculate_position()
 
         for circle in self.circles:
@@ -211,18 +213,18 @@ class MainCanvas(tkinter.Canvas):
     def create_many_images(self):
         # CREATE MANY IMAGES
 
-        img_path = r"C:\users\DK\desktop\test"
+        img_path = r"D:\test"
         for i in range(0, 28800):
             print(i)
-            self.circles[1].radius += (1 / 12000)
+            self.circles[1].radius += (1 / 24000)
             if self.arm.theta_mod >= 1.5:
-                self.arm.theta_mod -= (1 / 12000)
+                self.arm.theta_mod -= (1 / 24000)
             elif self.arm.theta_mod <= 1.5:
-                self.arm.theta_mod += (1 / 12000)
+                self.arm.theta_mod += (1 / 24000)
             if self.circles[1].theta_mod >= 1.5:
-                self.circles[1].theta_mod -= (1 / 12000)
+                self.circles[1].theta_mod -= (1 / 24000)
             elif self.circles[1].theta_mod <= 1.5:
-                self.circles[1].theta_mod += (1 / 12000)
+                self.circles[1].theta_mod += (1 / 24000)
             self.create_img(f'{img_path}/{str(i).zfill(3)}.png')
 
     def calculate_img_canvas_size(self) -> tuple[float, float]:
@@ -288,25 +290,25 @@ class MainCanvas(tkinter.Canvas):
         print('Saving image...')
 
         if self.add_text_overlay:
-            draw.text((30, self.height - 110),
+            draw.text((60, self.height - 190),
                       f"Rotations per frame: {round(self.rotation_mod)}",
-                      (255, 255, 255))
-            draw.text((30, self.height - 120),
+                      (255, 255, 255), font=self.font)
+            draw.text((60, self.height - 220),
                       f"Arm Length Mod: {round(self.arm.length_mod, 4)}",
-                      (255, 255, 255))
-            draw.text((30, self.height - 130),
+                      (255, 255, 255), font=self.font)
+            draw.text((60, self.height - 250),
                       f"Arm Theta Mod: {round(self.arm.theta_mod, 4)}",
-                      (255, 255, 255))
+                      (255, 255, 255), font=self.font)
             for i in range(len(self.circles)):
                 draw.text(
-                    (30, self.height - 70 - (i * 10)),
+                    (60, self.height - 100 - (i * 30)),
                     f"Circle {i} - Radius: {round(self.circles[i].radius, 4)}, "
                     f"Theta Mod: {round(self.circles[i].theta_mod, 4)}",
-                    (255, 255, 255)
+                    (255, 255, 255), font=self.font
                 )
-            draw.text((30, self.height - 30),
-                      f"itsDanz0r Jan 2022",
-                      (255, 255, 255))
+            draw.text((60, self.height - 60),
+                      f"Danny Kerr 2022",
+                      (255, 255, 255), font=self.font)
 
         img.save(file_name)
         print('Done!')
@@ -328,7 +330,7 @@ class MainCanvas(tkinter.Canvas):
             (pixel_coords[1] - self.height / 2) ** 2 + (pixel_coords[0] - self.width / 2) ** 2)
 
         # Make it on a scale from 0 to 1
-        distance_to_centre = float(distance_to_centre_in_pixels / (math.sqrt(2) * 2300 / 2))
+        distance_to_centre = float(distance_to_centre_in_pixels / (math.sqrt(2) * 2300 / 2)) -0.1
 
         # Calculate r, g, and b values
         r = round(self.outer_colour[0] * distance_to_centre + self.inner_colour[0] * (1 - distance_to_centre))
