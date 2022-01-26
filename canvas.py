@@ -20,8 +20,8 @@ class MainCanvas(tkinter.Canvas):
     def __init__(self, parent):
         super().__init__()
 
-        self.height = 800
-        self.width = 1000
+        self.height = 2160
+        self.width = 3840
 
         self.configure(
             height=self.height,
@@ -43,7 +43,7 @@ class MainCanvas(tkinter.Canvas):
         self.add_text_overlay = True
 
         self.draw_glow = True
-        self.pixel_resolution = 5
+        self.pixel_resolution = 20
 
         self.background_colour = (0, 0, 0)
         self.rounded_coords = []
@@ -55,14 +55,14 @@ class MainCanvas(tkinter.Canvas):
         self.playback_stopped = True
         self.playback_frame = 0
 
-        self.rotation_mod = 50
+        self.rotation_mod = 30
         self.total_rotations = tkinter.IntVar()
         self.total_rotations.set(0)
-        self.img_output_res_mod = 1
+        self.img_output_res_mod = 5
 
         self.draw_pixels = True
         self.inner_colour = [0, 0, 0]
-        self.outer_colour = [0, 200, 200]
+        self.outer_colour = [240, 240, 240]
 
         self.glow_colour = [255, 255, 255]
 
@@ -72,15 +72,15 @@ class MainCanvas(tkinter.Canvas):
     def initial_setup(self) -> None:
         """Draw all components on canvas at default settings"""
         self.circles = [
-            geometry.Circle(470, 0, self, None, 'gray'),
+            geometry.Circle(820, 0, self, None, 'gray'),
         ]
 
         self.circles.append(
-            geometry.Circle(300, 0, self, self.circles[0], 'gray')
+            geometry.Circle(600, 0, self, self.circles[0], 'gray')
         )
 
         self.circles.append(
-            geometry.Circle(120, 0, self, self.circles[1], 'gray')
+            geometry.Circle(240, 0, self, self.circles[1], 'gray')
         )
 
         self.inner_circle = self.circles[-1]
@@ -88,8 +88,8 @@ class MainCanvas(tkinter.Canvas):
             if i % 2 != 0:
                 self.circles[i].theta_mod = self.circles[i].theta_mod * -1
 
-        self.circles[1].theta_mod = self.circles[1].theta_mod * 2
-        self.circles[2].theta_mod = self.circles[2].theta_mod * 1
+        self.circles[1].theta_mod = self.circles[1].theta_mod * 2.3
+        self.circles[2].theta_mod = self.circles[2].theta_mod * 1.6
         self.arm = geometry.Arm(self.circles[-1], self)
         # self.apply_mods()
         self.arm.theta_mod = -1
@@ -234,21 +234,30 @@ class MainCanvas(tkinter.Canvas):
         rounded_coords = []
         img_size = self.calculate_img_canvas_size()[0] // 2
         for i in self.tracer.coords:
+            # rounded_coords.append(
+            #     (
+            #         round(((i[0] - self.center[0]) * self.img_output_res_mod) + self.width // 2),
+            #         round(((i[1] - self.center[1]) * self.img_output_res_mod) + self.height // 2)
+            #     )
+            # )
+
+
+            # adjusted for 4k
             rounded_coords.append(
                 (
-                    round(((i[0] - self.center[0]) * self.img_output_res_mod) + img_size),
-                    round(((i[1] - self.center[1]) * self.img_output_res_mod) + img_size)
+                    round((i[0] - self.center[0]) + self.width // 2),
+                    round((i[1] - self.center[1]) + self.height // 2)
                 )
             )
         return rounded_coords
 
-    @staticmethod
-    def compute_glow(rounded_coords, mod: tuple) -> tuple[tuple, ...]:
-        new_coords = list(map(list, rounded_coords))
-        for i in new_coords:
-            i[0] += mod[0]
-            i[1] += mod[1]
-        return tuple(map(tuple, new_coords))
+    # @staticmethod
+    # def compute_glow(rounded_coords, mod: tuple) -> tuple[tuple, ...]:
+    #     new_coords = list(map(list, rounded_coords))
+    #     for i in new_coords:
+    #         i[0] += mod[0]
+    #         i[1] += mod[1]
+    #     return tuple(map(tuple, new_coords))
 
     def create_img(self, file_name):
         self.calc_start = time.time()
@@ -260,7 +269,12 @@ class MainCanvas(tkinter.Canvas):
 
         # CHANGE BACKGROUND COLOUR
         # img = Image.new(mode='RGB', size=self.calculate_img_canvas_size(), color=self.background_colour)
-        img = Image.new(mode='RGB', size=self.calculate_img_canvas_size(), color='black')
+
+        # Auto calc img size
+        # img = Image.new(mode='RGB', size=self.calculate_img_canvas_size(), color='black')
+
+        # 4K output
+        img = Image.new(mode='RGB', size=(3840, 2160), color='black')
 
         draw = ImageDraw.Draw(img)
         self.draw_pixels = True
@@ -274,31 +288,35 @@ class MainCanvas(tkinter.Canvas):
         print('Saving image...')
 
         if self.add_text_overlay:
-            draw.text((30, self.calculate_img_canvas_size()[1] - 110),
+            draw.text((30, self.height - 110),
                       f"Rotations per frame: {round(self.rotation_mod)}",
                       (255, 255, 255))
-            draw.text((30, self.calculate_img_canvas_size()[1] - 120),
+            draw.text((30, self.height - 120),
                       f"Arm Length Mod: {round(self.arm.length_mod, 4)}",
                       (255, 255, 255))
-            draw.text((30, self.calculate_img_canvas_size()[1] - 130),
+            draw.text((30, self.height - 130),
                       f"Arm Theta Mod: {round(self.arm.theta_mod, 4)}",
                       (255, 255, 255))
             for i in range(len(self.circles)):
                 draw.text(
-                    (30, self.calculate_img_canvas_size()[1] - 50 - (i * 10)),
+                    (30, sself.height - 70 - (i * 10)),
                     f"Circle {i} - Radius: {round(self.circles[i].radius, 4)}, "
                     f"Theta Mod: {round(self.circles[i].theta_mod, 4)}",
                     (255, 255, 255)
                 )
+            draw.text((30, self.height - 30),
+                      f"itsDanz0r Jan 2022",
+                      (255, 255, 255))
 
         img.save(file_name)
         print('Done!')
         self.tracer.coords = []
-        self.playback_frame += 1
-        if self.playback_frame >= 199:
+
+        if self.playback_frame >= 600:
             self.playback_frame = 0
         # self.cycle_background_colour()
         self.cycle_gradient_colours()
+        self.playback_frame += 1
 
     def calculate_pixel_gradient(self, pixel_coords):
         if self.outer_colour == self.inner_colour:
@@ -307,10 +325,10 @@ class MainCanvas(tkinter.Canvas):
 
         # Find the distance to the center
         distance_to_centre_in_pixels = math.sqrt(
-            (pixel_coords[1] - img_size[0] / 2) ** 2 + (pixel_coords[0] - img_size[1] / 2) ** 2)
+            (pixel_coords[1] - self.height / 2) ** 2 + (pixel_coords[0] - self.width / 2) ** 2)
 
         # Make it on a scale from 0 to 1
-        distance_to_centre = float(distance_to_centre_in_pixels / (math.sqrt(2) * img_size[0] / 2)) - 0.1
+        distance_to_centre = float(distance_to_centre_in_pixels / (math.sqrt(2) * 2300 / 2))
 
         # Calculate r, g, and b values
         r = round(self.outer_colour[0] * distance_to_centre + self.inner_colour[0] * (1 - distance_to_centre))
@@ -320,45 +338,62 @@ class MainCanvas(tkinter.Canvas):
 
     def cycle_gradient_colours(self):
         i = self.playback_frame
-        colour_increment = 40
-        colour_change_freq = 5
+        colour_increment = 120
+        colour_change_freq = 2
 
-        # Cycle inner colour
-        if (colour_increment * 4) <= i <= (colour_increment * 5):
-            self.inner_colour[1] -= colour_change_freq
-            self.inner_colour[2] -= colour_change_freq
-
-        if (colour_increment * 3) <= i <= (colour_increment * 4):
-            self.inner_colour[1] += colour_change_freq
-
-        if (colour_increment * 2) <= i <= (colour_increment * 3):
-            self.inner_colour[1] -= colour_change_freq
-            self.inner_colour[2] += colour_change_freq
-
-        if colour_increment <= i <= (colour_increment * 2):
-            self.inner_colour[0] -= colour_change_freq
-            self.inner_colour[1] += colour_change_freq
-
-        if 0 <= i <= colour_increment:
-            self.inner_colour[0] += colour_change_freq
+        while True:
+            if (colour_increment * 4) <= i <= (colour_increment * 5):
+                self.inner_colour[1] -= colour_change_freq
+                self.inner_colour[2] -= colour_change_freq
+                break
+            if (colour_increment * 3) <= i <= (colour_increment * 4):
+                self.inner_colour[1] += colour_change_freq
+                break
+            if (colour_increment * 2) <= i <= (colour_increment * 3):
+                self.inner_colour[1] -= colour_change_freq
+                self.inner_colour[2] += colour_change_freq
+                break
+            if colour_increment <= i <= (colour_increment * 2):
+                self.inner_colour[0] -= colour_change_freq
+                self.inner_colour[1] += colour_change_freq
+                break
+            if 0 <= i <= colour_increment + 1:
+                self.inner_colour[0] += colour_change_freq
+                break
 
         # Cycle outer colour
-        if (colour_increment * 4) <= i <= (colour_increment * 5):
-            self.outer_colour[1] += colour_change_freq
+        while True:
+            if (colour_increment * 4) <= i <= (colour_increment * 5):
+                self.outer_colour[0] += colour_change_freq
+                self.outer_colour[1] += colour_change_freq
+                break
+            if (colour_increment * 3) <= i <= (colour_increment * 4):
+                self.outer_colour[1] -= colour_change_freq
+                self.outer_colour[2] += colour_change_freq
+                break
+            if (colour_increment * 2) <= i <= (colour_increment * 3):
+                self.outer_colour[0] -= colour_change_freq
+                self.outer_colour[1] += colour_change_freq
+                break
+            if colour_increment <= i <= (colour_increment * 2):
+                self.outer_colour[0] += colour_change_freq
+                break
+            if 0 <= i <= colour_increment:
+                self.outer_colour[0] -= colour_change_freq
+                self.outer_colour[1] -= colour_change_freq
+                self.outer_colour[2] -= colour_change_freq
+                break
 
-        if (colour_increment * 3) <= i <= (colour_increment * 4):
-            self.outer_colour[1] -= colour_change_freq
-            self.outer_colour[2] += colour_change_freq
 
-        if (colour_increment * 2) <= i <= (colour_increment * 3):
-            self.outer_colour[0] -= colour_change_freq
-            self.outer_colour[1] += colour_change_freq
 
-        if colour_increment <= i <= (colour_increment * 2):
-            self.outer_colour[0] += colour_change_freq
 
-        if 0 <= i <= colour_increment:
-            self.outer_colour[1] -= colour_change_freq
-            self.outer_colour[2] -= colour_change_freq
+
+
+
+
+
+
+
+
 
         print(self.inner_colour, self.outer_colour)
