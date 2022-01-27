@@ -9,7 +9,7 @@ ORANGE = [255, 127, 0]
 
 def increment_list(start_list, target_list, steps):
     """Turn one list of ints into another in a specified number of steps"""
-    
+
     list_incremented = []
 
     list_length = (min([len(start_list), len(target_list)]))
@@ -20,8 +20,12 @@ def increment_list(start_list, target_list, steps):
         list_incremented.append([])
 
         for j in range(list_length):
+            last_count = list_incremented[i - 1][j]
+            steps_remaining = steps - i
+            target = target_list[j]
+            
             list_incremented[i].append(
-                (list_incremented[i - 1][j] - (list_incremented[i - 1][j] - target_list[j]) / (steps - i))
+                last_count - ((last_count - target) / steps_remaining)
             )
 
     for i in range(steps):
