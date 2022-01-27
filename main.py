@@ -16,13 +16,12 @@ FRAMES_TO_GENERATE = 1440
 
 FILE_PATH = r'D:\test'
 
-PIXEL_DENSITY = 10
+PIXEL_DENSITY = 15
 ROTATIONS_PER_FRAME = 50
 
-NUMBER_OF_CIRCLES = 3
-CIRCLE_RADII = [1050, 630, 300]
-CIRCLE_THETA_MODS = [1, -2.3, 1.4]
-ARM_LENGTH_MOD = 1
+CIRCLE_RADII = [1050, 630, 300, 50]
+CIRCLE_THETA_MODS = [1, -2.3, 1.4, -1]
+ARM_LENGTH_MOD = 1.1
 ARM_THETA_MOD = -1.4
 
 
@@ -34,7 +33,7 @@ class ImageFrame:
 
     def output_png(self):
         calc_start = time.time()
-        print('Generating image...')
+        print(f'Generating image {self.roulette.frame} / {FRAMES_TO_GENERATE}...')
         img = Image.new(mode='RGB', size=self.resolution, color='black')
 
         for i in range(len(self.roulette.tracer.coords)):
@@ -47,8 +46,6 @@ class ImageFrame:
         img.save(f'{FILE_PATH}/{str(self.file_name).zfill(3)}.png')
         print('Done!')
         print(f'Completed in {time.time() - calc_start} seconds')
-        self.roulette.tracer.coords = []
-        self.roulette.tracer.mod_coords = []
 
 
 class Roulette:
@@ -148,6 +145,10 @@ class Roulette:
                 self.outer_colour[2] += colour_change_freq
                 break
 
+    def clear_coords_lists(self):
+        self.tracer.coords = []
+        self.tracer.mod_coords = []
+
 
 class Circle:
 
@@ -226,7 +227,7 @@ def define_roulette() -> Roulette:
             parent=roulette
         )
     )
-    for i in range(1, NUMBER_OF_CIRCLES - 1):
+    for i in range(1, len(CIRCLE_RADII) - 1):
         roulette.circles.append(
             Circle(
                 radius=CIRCLE_RADII[i],
@@ -254,24 +255,33 @@ def calculate_geometry(roulette, degrees):
         roulette.calculate_positions(i / PIXEL_DENSITY)
 
 
+def oscillate_attribute(roulette, section, attribute, upper_bound, lower_bound, increment):
+
+    if getattr(getattr(roulette, section), attribute) <= upper_bound:
+        setattr(getattr(roulette, section), attribute, getattr(getattr(roulette, section), attribute) + increment)
+    elif getattr(getattr(roulette, section), attribute) >= lower_bound:
+        setattr(getattr(roulette, section), attribute, getattr(getattr(roulette, section), attribute) - increment)
+
+
 def main():
     roulette = define_roulette()
 
     for i in range(FRAMES_TO_GENERATE):
 
-        if roulette.arm.theta_mod <= 1.5:
-            roulette.arm.theta_mod += 1 / 300
-        elif roulette.arm.theta_mod >= -1.5:
-            roulette.arm.theta_mod -= 1 / 300
+        oscillate_attribute(roulette, 'arm', 'theta_mod', 1.5, -1.5, 1/18000)
 
         calculate_geometry(roulette, roulette.rotations)
         roulette.frame += 1
+
         roulette.cycle_gradient_colours()
         roulette.tracer.modify_coords_for_output()
 
         output_image = ImageFrame(roulette, i)
         output_image.output_png()
+
         del output_image
+        roulette.clear_coords_lists()
+        print(roulette.arm.theta_mod)
 
 
 if __name__ == '__main__':
