@@ -4,7 +4,7 @@ Core app module
 """
 import math
 import time
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 ############
 # SETTINGS #
@@ -23,28 +23,54 @@ CIRCLE_THETA_MODS = [1, -2.3, 1.4, -1]
 ARM_LENGTH_MOD = 1.1
 ARM_THETA_MOD = -1.4
 
+FONT = ImageFont.truetype("cour.ttf", 28)
+
 
 class ImageFrame:
     def __init__(self, roulette, file_name):
         self.roulette = roulette
         self.resolution = RESOLUTION
         self.file_name = file_name
+        self.img = None
 
     def output_png(self):
         calc_start = time.time()
         print(f'Generating image {self.roulette.frame} / {FRAMES_TO_GENERATE}...')
-        img = Image.new(mode='RGB', size=self.resolution, color='black')
+        self.img = Image.new(mode='RGB', size=self.resolution, color='black')
 
         for i in range(len(self.roulette.tracer.coords)):
-            img.putpixel(
+            self.img.putpixel(
                 self.roulette.tracer.mod_coords[i],
                 self.roulette.calculate_pixel_gradient(self.roulette.tracer.coords[i])
             )
+        self.draw_text_overlay()
         print('Saving image...')
 
-        img.save(f'{FILE_PATH}/{str(self.file_name).zfill(3)}.png')
+        self.img.save(f'{FILE_PATH}/{str(self.file_name).zfill(3)}.png')
         print('Done!')
         print(f'Completed in {time.time() - calc_start} seconds')
+
+    def draw_text_overlay(self):
+        draw = ImageDraw.Draw(self.img)
+        draw.text((60, self.resolution[1] - 190),
+                  f"Rotations per frame: {round(ROTATIONS_PER_FRAME)}",
+                  (255, 255, 255), font=FONT)
+        draw.text((60, self.resolution[1] - 220),
+                  f"Arm Length Mod: {round(self.roulette.arm.length_mod, 4)}",
+                  (255, 255, 255), font=FONT)
+        draw.text((60, self.resolution[1] - 250),
+                  f"Arm Theta Mod: {round(self.roulette.arm.theta_mod, 4)}",
+                  (255, 255, 255), font=FONT)
+        for i in range(len(self.roulette.circles)):
+            draw.text(
+                (60, self.resolution[1] - 100 - (i * 30)),
+                f"Circle {i} - Radius: {round(self.roulette.circles[i].radius, 4)}, "
+                f"Theta Mod: {round(self.roulette.circles[i].theta_mod, 4)}",
+                (255, 255, 255), font=FONT
+            )
+        draw.text((60, self.resolution[1] - 60),
+                  f"Danny Kerr 2022",
+                  (255, 255, 255), font=FONT)
 
 
 class Roulette:
@@ -268,7 +294,7 @@ def main():
 
     for i in range(FRAMES_TO_GENERATE):
 
-        oscillate_attribute(roulette, 'arm', 'theta_mod', 1.5, -1.5, 1/18000)
+        oscillate_attribute(roulette, 'arm', 'theta_mod', 1.5, -1.5, 1/32000)
 
         calculate_geometry(roulette, roulette.rotations)
         roulette.frame += 1
