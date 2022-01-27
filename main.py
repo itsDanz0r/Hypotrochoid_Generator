@@ -11,7 +11,6 @@ from PIL import Image
 ############
 
 RESOLUTION = (3840, 2160)
-FRAME_RATE = 24
 FRAMES_TO_GENERATE = 1440
 
 FILE_PATH = r'D:\test'
@@ -264,6 +263,7 @@ def oscillate_attribute(roulette, section, attribute, upper_bound, lower_bound, 
 
 
 def main():
+
     roulette = define_roulette()
 
     for i in range(FRAMES_TO_GENERATE):
@@ -281,7 +281,6 @@ def main():
 
         del output_image
         roulette.clear_coords_lists()
-        print(roulette.arm.theta_mod)
 
 
 if __name__ == '__main__':
